@@ -1,0 +1,215 @@
+{
+  "info": {
+    "name": "Slider API Test",
+    "description": "Test collection for Slider API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Sliders (Public)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/sliders",
+          "host": ["{{base_url}}"],
+          "path": ["api", "sliders"]
+        }
+      }
+    },
+    {
+      "name": "Get Sliders by Type",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/sliders?type=featured",
+          "host": ["{{base_url}}"],
+          "path": ["api", "sliders"],
+          "query": [
+            {
+              "key": "type",
+              "value": "featured"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Slider by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/sliders/{{slider_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "sliders", "{{slider_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Create Slider (Protected)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Premium Cars",
+              "type": "text"
+            },
+            {
+              "key": "subtitle",
+              "value": "Starting from $25/day",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "Discover our premium car collection with the best rates",
+              "type": "text"
+            },
+            {
+              "key": "buttonText",
+              "value": "Explore Now",
+              "type": "text"
+            },
+            {
+              "key": "buttonLink",
+              "value": "/vehicles?type=premium",
+              "type": "text"
+            },
+            {
+              "key": "type",
+              "value": "featured",
+              "type": "text"
+            },
+            {
+              "key": "order",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "image",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/sliders",
+          "host": ["{{base_url}}"],
+          "path": ["api", "sliders"]
+        }
+      }
+    },
+    {
+      "name": "Get My Sliders",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/sliders/my/sliders",
+          "host": ["{{base_url}}"],
+          "path": ["api", "sliders", "my", "sliders"]
+        }
+      }
+    },
+    {
+      "name": "Update Slider",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Updated Premium Cars",
+              "type": "text"
+            },
+            {
+              "key": "subtitle",
+              "value": "Starting from $20/day",
+              "type": "text"
+            },
+            {
+              "key": "isActive",
+              "value": "true",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/sliders/{{slider_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "sliders", "{{slider_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Toggle Slider Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/sliders/{{slider_id}}/toggle",
+          "host": ["{{base_url}}"],
+          "path": ["api", "sliders", "{{slider_id}}", "toggle"]
+        }
+      }
+    },
+    {
+      "name": "Delete Slider",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/sliders/{{slider_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "sliders", "{{slider_id}}"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "auth_token",
+      "value": "your_jwt_token_here"
+    },
+    {
+      "key": "slider_id",
+      "value": "slider_id_here"
+    }
+  ]
+}

@@ -1,0 +1,542 @@
+{
+	"info": {
+		"_postman_id": "12345678-1234-1234-1234-123456789012",
+		"name": "Vehicle Rental API",
+		"description": "Complete API collection for Vehicle Rental System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"user\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "Register Client",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Vehicle Owner\",\n  \"email\": \"owner@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"client\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "Login User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "Login Client",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"owner@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Vehicles",
+			"item": [
+				{
+					"name": "Get All Vehicles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"vehicles"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Vehicles with Filters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles?category=car&rentType=daily&minPrice=1000&maxPrice=3000",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"vehicles"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "car"
+								},
+								{
+									"key": "rentType",
+									"value": "daily"
+								},
+								{
+									"key": "minPrice",
+									"value": "1000"
+								},
+								{
+									"key": "maxPrice",
+									"value": "3000"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Vehicle by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles/{{vehicle_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"vehicles",
+								"{{vehicle_id}}"
+							]
+						}
+					}
+				},
+                {
+                    "name": "Favorites - Add/Toggle Category",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Content-Type", "value": "application/json" }
+                        ],
+                        "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"categoryId\": \"car\"\n}" },
+                        "url": { "raw": "{{base_url}}/api/vehicles/favorites/category", "host": ["{{base_url}}"], "path": ["api","vehicles","favorites","category"] }
+                    },
+                    "description": "Add or remove favorite category (toggle)"
+                },
+                {
+                    "name": "Favorites - Get My Categories",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": { "raw": "{{base_url}}/api/vehicles/favorites/categories?userId={{user_id}}", "host": ["{{base_url}}"], "path": ["api","vehicles","favorites","categories"], "query": [{"key":"userId","value":"{{user_id}}"}] }
+                    },
+                    "description": "List favorite categories and grouped vehicles"
+                },
+                {
+                    "name": "Favorites - Remove Category",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": { "raw": "{{base_url}}/api/vehicles/favorites/category/{{favorite_category}}?userId={{user_id}}", "host": ["{{base_url}}"], "path": ["api","vehicles","favorites","category","{{favorite_category}}"], "query": [{"key":"userId","value":"{{user_id}}"}] }
+                    },
+                    "description": "Remove favorite category explicitly"
+                },
+				{
+					"name": "Create Vehicle",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Honda City 2020",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "description",
+									"value": "Well maintained car, perfect for city rides",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "category",
+									"value": "car",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "rentType",
+									"value": "daily",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "price",
+									"value": "1500",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "location",
+									"value": "Delhi, India",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": [],
+									"enabled": false
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/vehicles",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"vehicles"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Bike",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Royal Enfield Classic 350",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "description",
+									"value": "Perfect for long rides, well maintained",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "category",
+									"value": "bike",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "rentType",
+									"value": "hourly",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "price",
+									"value": "200",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "location",
+									"value": "Mumbai, India",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": [],
+									"enabled": false
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/vehicles",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"vehicles"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Auto",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Bajaj Auto Rickshaw",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "description",
+									"value": "Clean and comfortable auto for city travel",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "category",
+									"value": "auto",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "rentType",
+									"value": "per_km",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "price",
+									"value": "15",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "location",
+									"value": "Bangalore, India",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": [],
+									"enabled": false
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/vehicles",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"vehicles"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Bookings",
+			"item": [
+				{
+					"name": "Create Booking",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"vehicleId\": \"{{vehicle_id}}\",\n  \"startAt\": \"2024-01-15T10:00:00.000Z\",\n  \"endAt\": \"2024-01-16T10:00:00.000Z\",\n  \"expectedKm\": 100\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/bookings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"bookings"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get My Bookings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/bookings/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"bookings",
+								"me"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Owner Bookings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/bookings/owner",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"bookings",
+								"owner"
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000"
+		},
+		{
+			"key": "user_token",
+			"value": ""
+		},
+		{
+			"key": "client_token",
+			"value": ""
+		},
+		{
+			"key": "vehicle_id",
+			"value": ""
+		},
+		{
+			"key": "favorite_category",
+			"value": "car"
+		},
+		{
+			"key": "user_id",
+			"value": ""
+		}
+	]
+}

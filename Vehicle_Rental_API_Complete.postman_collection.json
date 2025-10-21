@@ -1,0 +1,1120 @@
+{
+	"info": {
+		"_postman_id": "12345678-1234-1234-1234-123456789012",
+		"name": "Vehicle Rental API - Complete Hinglish App",
+		"description": "Complete API collection for Hinglish Vehicle Rental System with User and Client modes",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"user\",\n  \"phone\": \"+91-9876543210\",\n  \"address\": \"Delhi, India\",\n  \"preferredLanguage\": \"hinglish\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Register Client",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Vehicle Owner\",\n  \"email\": \"owner@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"client\",\n  \"phone\": \"+91-9876543211\",\n  \"businessName\": \"ABC Vehicle Services\",\n  \"businessAddress\": \"Mumbai, India\",\n  \"businessPhone\": \"+91-9876543212\",\n  \"preferredLanguage\": \"hinglish\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Login User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login Client",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"owner@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auth/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "profile"]
+						}
+					}
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "John Doe Updated",
+									"type": "text"
+								},
+								{
+									"key": "phone",
+									"value": "+91-9876543210",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": "New Delhi, India",
+									"type": "text"
+								},
+								{
+									"key": "preferredLanguage",
+									"value": "hinglish",
+									"type": "text"
+								},
+								{
+									"key": "profileImage",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "profile"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Vehicles - Sell/Rent/Services",
+			"item": [
+				{
+					"name": "Get All Vehicles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicles"]
+						}
+					}
+				},
+				{
+					"name": "Get Vehicles for Sell",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles?vehicleType=sell",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicles"],
+							"query": [
+								{
+									"key": "vehicleType",
+									"value": "sell"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Vehicles for Rent",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles?vehicleType=rent&category=car&driverRequired=true",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicles"],
+							"query": [
+								{
+									"key": "vehicleType",
+									"value": "rent"
+								},
+								{
+									"key": "category",
+									"value": "car"
+								},
+								{
+									"key": "driverRequired",
+									"value": "true"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Service Vehicles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles?vehicleType=service",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicles"],
+							"query": [
+								{
+									"key": "vehicleType",
+									"value": "service"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Vehicle by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles/{{vehicle_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicles", "{{vehicle_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Rate Vehicle",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rating\": 5,\n  \"review\": \"Excellent vehicle, very comfortable and well maintained!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/vehicles/{{vehicle_id}}/rate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicles", "{{vehicle_id}}", "rate"]
+						}
+                }
+            },
+            {
+                "name": "Favorites - Add/Toggle Category",
+                "request": {
+                    "method": "POST",
+                    "header": [
+                        { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"categoryId\": \"car\"\n}" },
+                    "url": { "raw": "{{base_url}}/api/vehicles/favorites/category", "host": ["{{base_url}}"], "path": ["api","vehicles","favorites","category"] }
+                }
+            },
+            {
+                "name": "Favorites - Get My Categories",
+                "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": { "raw": "{{base_url}}/api/vehicles/favorites/categories?userId={{user_id}}", "host": ["{{base_url}}"], "path": ["api","vehicles","favorites","categories"], "query": [{"key":"userId","value":"{{user_id}}"}] }
+                }
+            },
+            {
+                "name": "Favorites - Remove Category",
+                "request": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": { "raw": "{{base_url}}/api/vehicles/favorites/category/{{favorite_category}}?userId={{user_id}}", "host": ["{{base_url}}"], "path": ["api","vehicles","favorites","category","{{favorite_category}}"], "query": [{"key":"userId","value":"{{user_id}}"}] }
+                }
+            },
+            {
+                "name": "Create Car for Rent",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Honda City 2020 - Premium Car",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Well maintained car, perfect for city rides and long trips. AC, Music system, comfortable seats.",
+									"type": "text"
+								},
+								{
+									"key": "category",
+									"value": "car",
+									"type": "text"
+								},
+								{
+									"key": "vehicleType",
+									"value": "rent",
+									"type": "text"
+								},
+								{
+									"key": "rentType",
+									"value": "daily",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "2000",
+									"type": "text"
+								},
+								{
+									"key": "dailyPrice",
+									"value": "2000",
+									"type": "text"
+								},
+								{
+									"key": "hourlyPrice",
+									"value": "300",
+									"type": "text"
+								},
+								{
+									"key": "perKmPrice",
+									"value": "15",
+									"type": "text"
+								},
+								{
+									"key": "driverRequired",
+									"value": "true",
+									"type": "text"
+								},
+								{
+									"key": "driverPrice",
+									"value": "500",
+									"type": "text"
+								},
+								{
+									"key": "driverAvailable",
+									"value": "true",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "Delhi, India",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/vehicles",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicles"]
+						}
+					}
+				},
+				{
+					"name": "Create Bike for Rent",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Royal Enfield Classic 350",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Perfect for long rides, well maintained bike with good mileage",
+									"type": "text"
+								},
+								{
+									"key": "category",
+									"value": "bike",
+									"type": "text"
+								},
+								{
+									"key": "vehicleType",
+									"value": "rent",
+									"type": "text"
+								},
+								{
+									"key": "rentType",
+									"value": "hourly",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "200",
+									"type": "text"
+								},
+								{
+									"key": "hourlyPrice",
+									"value": "200",
+									"type": "text"
+								},
+								{
+									"key": "dailyPrice",
+									"value": "1200",
+									"type": "text"
+								},
+								{
+									"key": "driverRequired",
+									"value": "false",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "Mumbai, India",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/vehicles",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicles"]
+						}
+					}
+				},
+				{
+					"name": "Create Car for Sell",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Maruti Swift 2018 - For Sale",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Single owner car, well maintained, all papers clear, ready to drive",
+									"type": "text"
+								},
+								{
+									"key": "category",
+									"value": "car",
+									"type": "text"
+								},
+								{
+									"key": "vehicleType",
+									"value": "sell",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "450000",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "Bangalore, India",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/vehicles",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicles"]
+						}
+					}
+				},
+				{
+					"name": "Get My Vehicles (Client)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles/my/vehicles",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicles", "my", "vehicles"]
+						}
+					}
+				},
+				{
+					"name": "Update Vehicle",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Honda City 2020 - Updated Price",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "1800",
+									"type": "text"
+								},
+								{
+									"key": "dailyPrice",
+									"value": "1800",
+									"type": "text"
+								},
+								{
+									"key": "isAvailable",
+									"value": "true",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/vehicles/{{vehicle_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicles", "{{vehicle_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete Vehicle",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles/{{vehicle_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicles", "{{vehicle_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Bookings - Rent Management",
+			"item": [
+				{
+					"name": "Create Booking with Driver",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"vehicleId\": \"{{vehicle_id}}\",\n  \"startAt\": \"2024-01-15T10:00:00.000Z\",\n  \"endAt\": \"2024-01-16T10:00:00.000Z\",\n  \"expectedKm\": 100,\n  \"pickupLocation\": \"Delhi Airport\",\n  \"destination\": \"Agra, Uttar Pradesh\",\n  \"driverRequired\": true,\n  \"paymentMethod\": \"online\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/bookings",
+							"host": ["{{base_url}}"],
+							"path": ["api", "bookings"]
+						}
+					}
+				},
+				{
+					"name": "Create Booking without Driver",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"vehicleId\": \"{{vehicle_id}}\",\n  \"startAt\": \"2024-01-20T08:00:00.000Z\",\n  \"endAt\": \"2024-01-20T18:00:00.000Z\",\n  \"expectedKm\": 50,\n  \"pickupLocation\": \"Mumbai Central\",\n  \"destination\": \"Pune, Maharashtra\",\n  \"driverRequired\": false,\n  \"paymentMethod\": \"offline\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/bookings",
+							"host": ["{{base_url}}"],
+							"path": ["api", "bookings"]
+						}
+					}
+				},
+				{
+					"name": "Get My Bookings (User)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/bookings/me",
+							"host": ["{{base_url}}"],
+							"path": ["api", "bookings", "me"]
+						}
+					}
+				},
+				{
+					"name": "Get Booking by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/bookings/{{booking_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "bookings", "{{booking_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Get Owner Bookings (Client)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/bookings/owner/requests",
+							"host": ["{{base_url}}"],
+							"path": ["api", "bookings", "owner", "requests"]
+						}
+					}
+				},
+				{
+					"name": "Accept Booking with Driver Info",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"driverName\": \"Rajesh Kumar\",\n  \"driverPhone\": \"+91-9876543213\",\n  \"driverLicense\": \"DL123456789\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/bookings/{{booking_id}}/accept",
+							"host": ["{{base_url}}"],
+							"path": ["api", "bookings", "{{booking_id}}", "accept"]
+						}
+					}
+				},
+				{
+					"name": "Accept Booking without Driver",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/bookings/{{booking_id}}/accept",
+							"host": ["{{base_url}}"],
+							"path": ["api", "bookings", "{{booking_id}}", "accept"]
+						}
+					}
+				},
+				{
+					"name": "Decline Booking",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/bookings/{{booking_id}}/decline",
+							"host": ["{{base_url}}"],
+							"path": ["api", "bookings", "{{booking_id}}", "decline"]
+						}
+					}
+				},
+				{
+					"name": "Start Trip",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/bookings/{{booking_id}}/start",
+							"host": ["{{base_url}}"],
+							"path": ["api", "bookings", "{{booking_id}}", "start"]
+						}
+					}
+				},
+				{
+					"name": "Complete Trip",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"actualKm\": 95\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/bookings/{{booking_id}}/complete",
+							"host": ["{{base_url}}"],
+							"path": ["api", "bookings", "{{booking_id}}", "complete"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Services - Vehicle Services",
+			"item": [
+				{
+					"name": "Create Service Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "vehicleCategory",
+									"value": "car",
+									"type": "text"
+								},
+								{
+									"key": "serviceType",
+									"value": "maintenance",
+									"type": "text"
+								},
+								{
+									"key": "title",
+									"value": "Car Service Required",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "My Honda City needs regular maintenance service. Oil change, filter replacement, and general checkup required.",
+									"type": "text"
+								},
+								{
+									"key": "mobile",
+									"value": "+91-9876543210",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "john@example.com",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": "Delhi, India",
+									"type": "text"
+								},
+								{
+									"key": "urgency",
+									"value": "medium",
+									"type": "text"
+								},
+								{
+									"key": "preferredDate",
+									"value": "2024-01-25",
+									"type": "text"
+								},
+								{
+									"key": "preferredTime",
+									"value": "Morning (9 AM - 12 PM)",
+									"type": "text"
+								},
+								{
+									"key": "paymentMethod",
+									"value": "online",
+									"type": "text"
+								},
+								{
+									"key": "estimatedPrice",
+									"value": "2500",
+									"type": "text"
+								},
+								{
+									"key": "notes",
+									"value": "Please call before coming. Car is at home.",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/services",
+							"host": ["{{base_url}}"],
+							"path": ["api", "services"]
+						}
+					}
+				},
+				{
+					"name": "Get My Service Requests (User)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/services/my",
+							"host": ["{{base_url}}"],
+							"path": ["api", "services", "my"]
+						}
+					}
+				},
+				{
+					"name": "Get Service Request by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/services/{{service_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "services", "{{service_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Get All Service Requests (Client)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/services",
+							"host": ["{{base_url}}"],
+							"path": ["api", "services"]
+						}
+					}
+				},
+				{
+					"name": "Get Service Requests by Category",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/services?serviceType=maintenance&vehicleCategory=car&status=pending",
+							"host": ["{{base_url}}"],
+							"path": ["api", "services"],
+							"query": [
+								{
+									"key": "serviceType",
+									"value": "maintenance"
+								},
+								{
+									"key": "vehicleCategory",
+									"value": "car"
+								},
+								{
+									"key": "status",
+									"value": "pending"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Accept Service Request (Client)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/services/{{service_id}}/accept",
+							"host": ["{{base_url}}"],
+							"path": ["api", "services", "{{service_id}}", "accept"]
+						}
+					}
+				},
+				{
+					"name": "Update Service Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"in_progress\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/services/{{service_id}}/status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "services", "{{service_id}}", "status"]
+						}
+					}
+				},
+				{
+					"name": "Complete Service",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"completed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/services/{{service_id}}/status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "services", "{{service_id}}", "status"]
+						}
+					}
+				},
+				{
+					"name": "Get Assigned Service Requests (Client)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/services/assigned/me",
+							"host": ["{{base_url}}"],
+							"path": ["api", "services", "assigned", "me"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000"
+		},
+		{
+			"key": "user_token",
+			"value": ""
+		},
+		{
+			"key": "client_token",
+			"value": ""
+		},
+		{
+			"key": "vehicle_id",
+			"value": ""
+		},
+		{
+			"key": "booking_id",
+			"value": ""
+		},
+		{
+			"key": "service_id",
+			"value": ""
+		},
+		{
+			"key": "favorite_category",
+			"value": "car"
+		},
+		{
+			"key": "user_id",
+			"value": ""
+		}
+	]
+}

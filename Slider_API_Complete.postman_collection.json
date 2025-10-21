@@ -1,0 +1,626 @@
+{
+  "info": {
+    "name": "Vehicle Rental - Slider API",
+    "description": "Complete API collection for Slider management with image upload functionality",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"123456\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"Test Address\",\n  \"role\": \"client\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Slider API - Public Endpoints",
+      "item": [
+        {
+          "name": "Get All Active Sliders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sliders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders"]
+            }
+          }
+        },
+        {
+          "name": "Get Sliders by Type - Featured",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sliders?type=featured",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "featured"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Sliders by Type - Latest",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sliders?type=latest",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "latest"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Sliders by Type - Offer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sliders?type=offer",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "offer"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Sliders by Type - Promotion",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sliders?type=promotion",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "promotion"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Sliders (Including Inactive)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sliders?isActive=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders"],
+              "query": [
+                {
+                  "key": "isActive",
+                  "value": "false"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Slider by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sliders/{{slider_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders", "{{slider_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Slider API - Protected Endpoints",
+      "item": [
+        {
+          "name": "Create Featured Slider",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Premium Cars",
+                  "type": "text"
+                },
+                {
+                  "key": "subtitle",
+                  "value": "Starting from $25/day",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Discover our premium car collection with the best rates and luxury features",
+                  "type": "text"
+                },
+                {
+                  "key": "buttonText",
+                  "value": "Explore Now",
+                  "type": "text"
+                },
+                {
+                  "key": "buttonLink",
+                  "value": "/vehicles?type=premium",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "featured",
+                  "type": "text"
+                },
+                {
+                  "key": "order",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/sliders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders"]
+            }
+          }
+        },
+        {
+          "name": "Create Latest Slider",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "New Arrivals",
+                  "type": "text"
+                },
+                {
+                  "key": "subtitle",
+                  "value": "Latest vehicles added this week",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Check out our newest additions to the fleet",
+                  "type": "text"
+                },
+                {
+                  "key": "buttonText",
+                  "value": "View Latest",
+                  "type": "text"
+                },
+                {
+                  "key": "buttonLink",
+                  "value": "/vehicles?sort=latest",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "latest",
+                  "type": "text"
+                },
+                {
+                  "key": "order",
+                  "value": "2",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/sliders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders"]
+            }
+          }
+        },
+        {
+          "name": "Create Offer Slider",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Special Offer",
+                  "type": "text"
+                },
+                {
+                  "key": "subtitle",
+                  "value": "50% OFF on Weekend Rentals",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Limited time offer - Book now and save big!",
+                  "type": "text"
+                },
+                {
+                  "key": "buttonText",
+                  "value": "Book Now",
+                  "type": "text"
+                },
+                {
+                  "key": "buttonLink",
+                  "value": "/vehicles?offer=true",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "offer",
+                  "type": "text"
+                },
+                {
+                  "key": "order",
+                  "value": "3",
+                  "type": "text"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00.000Z",
+                  "type": "text"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59.000Z",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/sliders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders"]
+            }
+          }
+        },
+        {
+          "name": "Create Promotion Slider",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Summer Promotion",
+                  "type": "text"
+                },
+                {
+                  "key": "subtitle",
+                  "value": "Free Driver with Every Booking",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Enjoy complimentary driver service this summer season",
+                  "type": "text"
+                },
+                {
+                  "key": "buttonText",
+                  "value": "Learn More",
+                  "type": "text"
+                },
+                {
+                  "key": "buttonLink",
+                  "value": "/promotions/summer",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "promotion",
+                  "type": "text"
+                },
+                {
+                  "key": "order",
+                  "value": "4",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/sliders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders"]
+            }
+          }
+        },
+        {
+          "name": "Get My Sliders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/sliders/my/sliders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders", "my", "sliders"]
+            }
+          }
+        },
+        {
+          "name": "Update Slider",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Updated Premium Cars",
+                  "type": "text"
+                },
+                {
+                  "key": "subtitle",
+                  "value": "Starting from $20/day - Special Price!",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Updated description with new pricing",
+                  "type": "text"
+                },
+                {
+                  "key": "buttonText",
+                  "value": "Book Now",
+                  "type": "text"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/sliders/{{slider_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders", "{{slider_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Slider with New Image",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Updated with New Image",
+                  "type": "text"
+                },
+                {
+                  "key": "subtitle",
+                  "value": "New image uploaded",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/sliders/{{slider_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders", "{{slider_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Slider Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/sliders/{{slider_id}}/toggle",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders", "{{slider_id}}", "toggle"]
+            }
+          }
+        },
+        {
+          "name": "Delete Slider",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/sliders/{{slider_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sliders", "{{slider_id}}"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "slider_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set auth token from login response",
+          "if (pm.response && pm.response.json() && pm.response.json().data && pm.response.json().data.token) {",
+          "    pm.collectionVariables.set('auth_token', pm.response.json().data.token);",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-extract slider ID from create response",
+          "if (pm.response && pm.response.json() && pm.response.json().data && pm.response.json().data._id) {",
+          "    pm.collectionVariables.set('slider_id', pm.response.json().data._id);",
+          "}"
+        ]
+      }
+    }
+  ]
+}

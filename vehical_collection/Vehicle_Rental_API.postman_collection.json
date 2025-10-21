@@ -1,0 +1,540 @@
+{
+	"info": {
+		"_postman_id": "12345678-1234-1234-1234-123456789012",
+		"name": "Vehicle Rental API",
+		"description": "Complete API collection for Vehicle Rental System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"user\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user"
+					},
+					"response": []
+				},
+				{
+					"name": "Register Client",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Vehicle Owner\",\n  \"email\": \"owner@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"client\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new client (vehicle owner)"
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login user and get JWT token"
+					},
+					"response": []
+				},
+				{
+					"name": "Login Client",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"owner@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login client and get JWT token"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints"
+		},
+		{
+			"name": "Vehicles",
+			"item": [
+				{
+					"name": "Get All Vehicles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"vehicles"
+							]
+						},
+						"description": "Get all available vehicles"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Vehicles with Filters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles?category=car&rentType=daily&minPrice=1000&maxPrice=3000&q=honda",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"vehicles"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "car"
+								},
+								{
+									"key": "rentType",
+									"value": "daily"
+								},
+								{
+									"key": "minPrice",
+									"value": "1000"
+								},
+								{
+									"key": "maxPrice",
+									"value": "3000"
+								},
+								{
+									"key": "q",
+									"value": "honda"
+								}
+							]
+						},
+						"description": "Get vehicles with filters (category, rentType, price range, search)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Vehicle by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vehicles/{{vehicle_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"vehicles",
+								"{{vehicle_id}}"
+							]
+						},
+						"description": "Get specific vehicle by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Vehicle (Client Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Honda City 2020",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Well maintained car, perfect for city rides",
+									"type": "text"
+								},
+								{
+									"key": "category",
+									"value": "car",
+									"type": "text"
+								},
+								{
+									"key": "rentType",
+									"value": "daily",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "1500",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "Delhi, India",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/vehicles",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"vehicles"
+							]
+						},
+						"description": "Create a new vehicle (requires client role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Bike",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Royal Enfield Classic 350",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"Perfect for long rides, well maintained",
+									"type": "text"
+								},
+								{
+									"key": "category",
+									"value": "bike",
+									"type": "text"
+								},
+								{
+									"key": "rentType",
+									"value": "hourly",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "200",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "Mumbai, India",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/vehicles",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"vehicles"
+							]
+						},
+						"description": "Create a bike for rent"
+					},
+					"response": []
+				}
+			],
+			"description": "Vehicle management endpoints"
+		},
+		{
+			"name": "Bookings",
+			"item": [
+				{
+					"name": "Create Booking",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"vehicleId\": \"{{vehicle_id}}\",\n  \"startAt\": \"2024-01-15T10:00:00.000Z\",\n  \"endAt\": \"2024-01-16T10:00:00.000Z\",\n  \"expectedKm\": 100\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/bookings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"bookings"
+							]
+						},
+						"description": "Create a new booking"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Hourly Booking",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"vehicleId\": \"{{vehicle_id}}\",\n  \"startAt\": \"2024-01-15T09:00:00.000Z\",\n  \"endAt\": \"2024-01-15T15:00:00.000Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/bookings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"bookings"
+							]
+						},
+						"description": "Create hourly booking (6 hours)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Per KM Booking",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"vehicleId\": \"{{vehicle_id}}\",\n  \"startAt\": \"2024-01-15T08:00:00.000Z\",\n  \"endAt\": \"2024-01-15T18:00:00.000Z\",\n  \"expectedKm\": 250\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/bookings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"bookings"
+							]
+						},
+						"description": "Create per KM booking"
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Bookings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/bookings/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"bookings",
+								"me"
+							]
+						},
+						"description": "Get current user's bookings"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Owner Bookings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{client_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/bookings/owner",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"bookings",
+								"owner"
+							]
+						},
+						"description": "Get bookings for vehicle owner (client role required)"
+					},
+					"response": []
+				}
+			],
+			"description": "Booking management endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "user_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "client_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "vehicle_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
