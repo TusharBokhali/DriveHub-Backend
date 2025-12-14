@@ -605,6 +605,404 @@
 			]
 		},
 		{
+			"name": "Admin - Vehicle Management",
+			"item": [
+				{
+					"name": "Get All Vehicles (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/vehicles",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "vehicles"]
+						},
+						"description": "Get all vehicles (published + unpublished, excluding deleted). No filters applied."
+					}
+				},
+				{
+					"name": "Get Vehicles for Rent (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/vehicles?vehicleType=rent",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "vehicles"],
+							"query": [
+								{
+									"key": "vehicleType",
+									"value": "rent",
+									"description": "Filter by vehicle type: rent, sell, or service"
+								}
+							]
+						},
+						"description": "Get only rent vehicles (published + unpublished)"
+					}
+				},
+				{
+					"name": "Get Vehicles for Sell (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/vehicles?vehicleType=sell",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "vehicles"],
+							"query": [
+								{
+									"key": "vehicleType",
+									"value": "sell",
+									"description": "Filter by vehicle type: rent, sell, or service"
+								}
+							]
+						},
+						"description": "Get only sell vehicles (published + unpublished)"
+					}
+				},
+				{
+					"name": "Get Vehicles for Service (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/vehicles?vehicleType=service",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "vehicles"],
+							"query": [
+								{
+									"key": "vehicleType",
+									"value": "service",
+									"description": "Filter by vehicle type: rent, sell, or service"
+								}
+							]
+						},
+						"description": "Get only service vehicles (published + unpublished)"
+					}
+				},
+				{
+					"name": "Get Vehicles with Multiple Filters (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/vehicles?vehicleType=rent&category=car&isPublished=true",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "vehicles"],
+							"query": [
+								{
+									"key": "vehicleType",
+									"value": "rent",
+									"description": "Filter by vehicle type"
+								},
+								{
+									"key": "category",
+									"value": "car",
+									"description": "Filter by category: bike, car, auto, other"
+								},
+								{
+									"key": "isPublished",
+									"value": "true",
+									"description": "Filter by publish status: true or false"
+								}
+							]
+						},
+						"description": "Get vehicles with multiple filters applied"
+					}
+				},
+				{
+					"name": "Get Vehicle by ID (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/vehicles/{{vehicle_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "vehicles", "{{vehicle_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Create Vehicle (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Honda CR-V 2022",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Premium SUV with all modern features. Well maintained, single owner.",
+									"type": "text"
+								},
+								{
+									"key": "category",
+									"value": "car",
+									"type": "text"
+								},
+								{
+									"key": "vehicleType",
+									"value": "rent",
+									"type": "text"
+								},
+								{
+									"key": "rentType",
+									"value": "daily",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "28500",
+									"type": "text"
+								},
+								{
+									"key": "dailyPrice",
+									"value": "28500",
+									"type": "text"
+								},
+								{
+									"key": "hourlyPrice",
+									"value": "3000",
+									"type": "text"
+								},
+								{
+									"key": "perKmPrice",
+									"value": "20",
+									"type": "text"
+								},
+								{
+									"key": "driverRequired",
+									"value": "false",
+									"type": "text"
+								},
+								{
+									"key": "driverAvailable",
+									"value": "true",
+									"type": "text"
+								},
+								{
+									"key": "driverPrice",
+									"value": "500",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "Airport",
+									"type": "text"
+								},
+								{
+									"key": "mileage",
+									"value": "22000",
+									"type": "text"
+								},
+								{
+									"key": "seats",
+									"value": "5",
+									"type": "text"
+								},
+								{
+									"key": "transmission",
+									"value": "automatic",
+									"type": "text"
+								},
+								{
+									"key": "fuelType",
+									"value": "petrol",
+									"type": "text"
+								},
+								{
+									"key": "year",
+									"value": "2022",
+									"type": "text"
+								},
+								{
+									"key": "owner",
+									"value": "{{owner_id}}",
+									"type": "text",
+									"description": "Optional: Owner user ID. If not provided, uses authenticated admin user."
+								},
+								{
+									"key": "isPublished",
+									"value": "false",
+									"type": "text",
+									"description": "Optional: Default is false. Set to true to publish immediately."
+								},
+								{
+									"key": "currency",
+									"value": "$",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/vehicles",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "vehicles"]
+						}
+					}
+				},
+				{
+					"name": "Update Vehicle (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Honda CR-V 2022 - Updated",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "28000",
+									"type": "text"
+								},
+								{
+									"key": "dailyPrice",
+									"value": "28000",
+									"type": "text"
+								},
+								{
+									"key": "isAvailable",
+									"value": "true",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/vehicles/{{vehicle_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "vehicles", "{{vehicle_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete Vehicle (Admin - Soft Delete)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/vehicles/{{vehicle_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "vehicles", "{{vehicle_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Publish Vehicle",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"isPublished\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/vehicles/{{vehicle_id}}/publish",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "vehicles", "{{vehicle_id}}", "publish"]
+						}
+					}
+				},
+				{
+					"name": "Unpublish Vehicle",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"isPublished\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/vehicles/{{vehicle_id}}/publish",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "vehicles", "{{vehicle_id}}", "publish"]
+						}
+					}
+				}
+			]
+		},
+		{
 			"name": "Bookings - Rent Management",
 			"item": [
 				{
@@ -1114,6 +1512,14 @@
 		},
 		{
 			"key": "user_id",
+			"value": ""
+		},
+		{
+			"key": "admin_token",
+			"value": ""
+		},
+		{
+			"key": "owner_id",
 			"value": ""
 		}
 	]

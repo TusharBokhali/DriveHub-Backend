@@ -5,19 +5,38 @@ const vehicleSchema = new mongoose.Schema({
   title: {type:String, required:true},
   description: String,
   category: {type:String, enum:['bike','car','auto','other'], default:'other'},
-  images: [String], // urls / paths
+  // Images can be stored as strings (URLs) or objects (with metadata)
+  images: [{
+    type: mongoose.Schema.Types.Mixed, // Allow both String and Object
+    // If String: just the URL/path
+    // If Object: { url, filename, originalName, mimetype, size }
+  }],
   vehicleType: { type:String, enum:['sell','rent','service'], required:true }, // sell, rent, or service
   rentType: { type:String, enum:['hourly','daily','per_km','fixed'], required: function() { return this.vehicleType === 'rent'; } },
   price: { type:Number, required:true }, // base price (interpretation depends on rentType)
   priceUnit: String, // e.g., 'INR' or per 'hour' etc.
-  // Multiple pricing options for rent
-  hourlyPrice: { type:Number, required: function() { return this.vehicleType === 'rent' && this.rentType === 'hourly'; } },
-  dailyPrice: { type:Number, required: function() { return this.vehicleType === 'rent' && this.rentType === 'daily'; } },
-  perKmPrice: { type:Number, required: function() { return this.vehicleType === 'rent' && this.rentType === 'per_km'; } },
+  currency: { type:String, default:'₹' }, // Currency symbol (₹, $, €, etc.)
+  // Multiple pricing options for rent - all optional, owner can provide any combination
+  hourlyPrice: { type:Number }, // Optional: can be provided along with dailyPrice and perKmPrice
+  dailyPrice: { type:Number }, // Optional: can be provided along with hourlyPrice and perKmPrice
+  perKmPrice: { type:Number }, // Optional: can be provided along with hourlyPrice and dailyPrice
+  // Pricing options array for easy display
+  pricingOptions: [{
+    label: { type: String, required: true }, // e.g., "per hour", "per day", "per km"
+    price: { type: Number, required: true },
+    currency_symbol: { type: String, default: '₹' }
+  }],
   // Driver options
   driverRequired: { type:Boolean, default:false },
   driverPrice: { type:Number, default:0 }, // additional price for driver
   driverAvailable: { type:Boolean, default:false },
+  driverLabel: { type:String }, // Custom label for driver price (e.g., "per hour", "with driver", etc.)
+  // Driver pricing as separate object (not in pricingOptions array)
+  driverPricing: {
+    label: { type: String },
+    price: { type: Number },
+    currency_symbol: { type: String }
+  },
   // Ratings and reviews
   ratings: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -45,6 +64,9 @@ const vehicleSchema = new mongoose.Schema({
   // Service specific fields
   serviceCategory: { type:String, enum:['maintenance','repair','cleaning','inspection','other'], required: function() { return this.vehicleType === 'service'; } },
   serviceDescription: { type:String, required: function() { return this.vehicleType === 'service'; } },
+  // Admin management fields
+  isPublished: { type: Boolean, default: true },
+  isDeleted: { type: Boolean, default: false },
   createdAt: {type:Date, default: Date.now}
 });
 

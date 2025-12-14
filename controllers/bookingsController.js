@@ -26,7 +26,11 @@ exports.createBooking = async (req,res) => {
       driverRequired, paymentMethod
     } = req.body || {};
     
-    const vehicle = await Vehicle.findById(vehicleId);
+    const vehicle = await Vehicle.findOne({ 
+      _id: vehicleId,
+      isPublished: true,
+      isDeleted: false
+    });
     if(!vehicle) return res.status(404).json({ 
       success: false, 
       data: null, 

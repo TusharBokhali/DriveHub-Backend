@@ -48,19 +48,15 @@ router.get('/test', (req, res) => {
   });
 });
 
-// Protected routes - Only authenticated clients can access
-router.post('/', protect, requireRole('client'), (req, res, next) => {
-  upload.array('images', 5)(req, res, (err) => {
-    if (err) {
-      return res.status(400).json({
-        success: false,
-        data: null,
-        message: err.message || 'File upload error'
-      });
-    }
-    next();
+// DISABLED: Vehicle creation moved to /api/admin/vehicles
+// router.post('/', protect, requireRole('client'), ...);
+router.post('/', (req, res) => {
+  res.status(403).json({
+    success: false,
+    data: null,
+    message: 'Vehicle creation is disabled. Please use /api/admin/vehicles'
   });
-}, validateVehicle, createVehicle);
+});
 
 // Public routes - No authentication required
 router.get('/my/vehicles', getMyVehicles);
@@ -77,19 +73,25 @@ router.delete('/favorites/:carId', protect, removeFavoriteCar);
 
 router.get('/:id', getVehicleById);
 
-router.put('/:id', protect, requireRole('client'), (req, res, next) => {
-  upload.array('images', 5)(req, res, (err) => {
-    if (err) {
-      return res.status(400).json({
-        success: false,
-        data: null,
-        message: err.message || 'File upload error'
-      });
-    }
-    next();
+// DISABLED: Vehicle update moved to /api/admin/vehicles
+// router.put('/:id', protect, requireRole('client'), ...);
+router.put('/:id', (req, res) => {
+  res.status(403).json({
+    success: false,
+    data: null,
+    message: 'Vehicle update is disabled. Please use /api/admin/vehicles/:id'
   });
-}, updateVehicle);
-router.delete('/:id', protect, requireRole('client'), deleteVehicle);
+});
+
+// DISABLED: Vehicle delete moved to /api/admin/vehicles
+// router.delete('/:id', protect, requireRole('client'), deleteVehicle);
+router.delete('/:id', (req, res) => {
+  res.status(403).json({
+    success: false,
+    data: null,
+    message: 'Vehicle deletion is disabled. Please use /api/admin/vehicles/:id'
+  });
+});
 router.post('/:id/rate', protect, rateVehicle);
 
 module.exports = router;

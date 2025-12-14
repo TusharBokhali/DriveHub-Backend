@@ -19,6 +19,10 @@ app.use('/api/vehicles', require('./routes/vehicles'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/services', require('./routes/services'));
 app.use('/api/sliders', require('./routes/sliders'));
+app.use('/api/dashboard', require('./routes/dashboard'));
+
+// Admin routes
+app.use('/api/admin/vehicles', require('./routes/admin/vehicles'));
 
 app.get('/', (req,res)=>res.send('Vehicle Rental API Running'));
 

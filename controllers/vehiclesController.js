@@ -5,8 +5,9 @@ exports.createVehicle = async (req,res) => {
   try {
     const { 
       title, description, category, vehicleType, rentType, price, location,
-      hourlyPrice, dailyPrice, perKmPrice, driverRequired, driverPrice, driverAvailable,
-      serviceCategory, serviceDescription, mileage, seats, transmission, fuelType, year, features
+      hourlyPrice, dailyPrice, perKmPrice, driverRequired, driverPrice, driverAvailable, driverLabel,
+      serviceCategory, serviceDescription, mileage, seats, transmission, fuelType, year, features,
+      currency
     } = req.body || {};
     
     // Handle multiple image uploads
@@ -31,11 +32,50 @@ exports.createVehicle = async (req,res) => {
       }
     }
     
+    // Build pricing options array from individual prices
+    const currencySymbol = currency || '₹';
+    const pricingOptions = [];
+    
+    if (hourlyPrice) {
+      pricingOptions.push({
+        label: 'per hour',
+        price: hourlyPrice,
+        currency_symbol: currencySymbol
+      });
+    }
+    if (dailyPrice) {
+      pricingOptions.push({
+        label: 'per day',
+        price: dailyPrice,
+        currency_symbol: currencySymbol
+      });
+    }
+    if (perKmPrice) {
+      pricingOptions.push({
+        label: 'per km',
+        price: perKmPrice,
+        currency_symbol: currencySymbol
+      });
+    }
+    
+    // Driver pricing as separate object (not in pricingOptions array)
+    let driverPricingObj = undefined;
+    if (driverAvailable && driverPrice && driverPrice > 0) {
+      driverPricingObj = {
+        label: driverLabel || 'with driver',
+        price: driverPrice,
+        currency_symbol: currencySymbol
+      };
+    }
+    
     const vehicle = new Vehicle({
       owner: req.user._id,
       title, description, category, vehicleType, rentType, price, location,
-      hourlyPrice, dailyPrice, perKmPrice, driverRequired, driverPrice, driverAvailable,
+      hourlyPrice, dailyPrice, perKmPrice, driverRequired, driverPrice, driverAvailable, driverLabel,
       serviceCategory, serviceDescription, images,
+      currency: currencySymbol,
+      pricingOptions: pricingOptions.length > 0 ? pricingOptions : undefined,
+      driverPricing: driverPricingObj,
       mileage: mileage || 0,
       seats: seats || 4,
       transmission: transmission || 'manual',
@@ -64,6 +104,9 @@ exports.getVehicles = async (req,res) => {
   try {
     const { category, vehicleType, rentType, minPrice, maxPrice, q, driverRequired } = req.query;
     let filter = {};
+    // User-side: Only show published and non-deleted vehicles
+    filter.isPublished = true;
+    filter.isDeleted = false;
     if(category) filter.category = category;
     if(vehicleType) filter.vehicleType = vehicleType;
     if(rentType) filter.rentType = rentType;
@@ -102,14 +145,26 @@ exports.getVehicles = async (req,res) => {
 
 exports.getVehicleById = async (req,res) => {
   try {
-    const vehicle = await Vehicle.findById(req.params.id)
-      .populate('owner','name email phone businessName')
-      .populate('ratings.user', 'name');
+    const vehicle = await Vehicle.findOne({ 
+      _id: req.params.id,
+      isPublished: true,
+      isDeleted: false
+    })
+      .populate('owner','name email phone businessName');
+    
     if(!vehicle) return res.status(404).json({ 
       success: false, 
       data: null, 
       message: 'Vehicle not found' 
     });
+    
+    // Populate ratings.user separately to ensure proper population
+    if (vehicle.ratings && vehicle.ratings.length > 0) {
+      await Vehicle.populate(vehicle, {
+        path: 'ratings.user',
+        select: 'name profileImage email'
+      });
+    }
     
     // Add title to owner data based on vehicleType
     const vehicleObj = vehicle.toObject();
@@ -138,7 +193,11 @@ exports.getVehicleById = async (req,res) => {
 exports.rateVehicle = async (req,res) => {
   try {
     const { rating, review } = req.body;
-    const vehicle = await Vehicle.findById(req.params.id);
+    const vehicle = await Vehicle.findOne({ 
+      _id: req.params.id,
+      isPublished: true,
+      isDeleted: false 
+    });
     
     if(!vehicle) return res.status(404).json({ 
       success: false, 
@@ -207,6 +266,67 @@ exports.updateVehicle = async (req,res) => {
       }));
     }
 
+    // Set default currency if not provided
+    const currencySymbol = updates.currency || vehicle.currency || '₹';
+    if (updates.currency === undefined || updates.currency === null || updates.currency === '') {
+      updates.currency = currencySymbol;
+    }
+
+    // Build pricing options array if any pricing fields are updated
+    const { hourlyPrice, dailyPrice, perKmPrice, driverAvailable, driverPrice, driverLabel } = updates;
+    if (hourlyPrice !== undefined || dailyPrice !== undefined || perKmPrice !== undefined || 
+        driverAvailable !== undefined || driverPrice !== undefined || driverLabel !== undefined) {
+      const pricingOptions = [];
+      
+      const finalHourlyPrice = hourlyPrice !== undefined ? hourlyPrice : vehicle.hourlyPrice;
+      const finalDailyPrice = dailyPrice !== undefined ? dailyPrice : vehicle.dailyPrice;
+      const finalPerKmPrice = perKmPrice !== undefined ? perKmPrice : vehicle.perKmPrice;
+      const finalDriverAvailable = driverAvailable !== undefined ? driverAvailable : vehicle.driverAvailable;
+      const finalDriverPrice = driverPrice !== undefined ? driverPrice : vehicle.driverPrice;
+      const finalDriverLabel = driverLabel !== undefined ? driverLabel : vehicle.driverLabel;
+      
+      if (finalHourlyPrice) {
+        pricingOptions.push({
+          label: 'per hour',
+          price: finalHourlyPrice,
+          currency_symbol: currencySymbol
+        });
+      }
+      if (finalDailyPrice) {
+        pricingOptions.push({
+          label: 'per day',
+          price: finalDailyPrice,
+          currency_symbol: currencySymbol
+        });
+      }
+      if (finalPerKmPrice) {
+        pricingOptions.push({
+          label: 'per km',
+          price: finalPerKmPrice,
+          currency_symbol: currencySymbol
+        });
+      }
+      
+      updates.pricingOptions = pricingOptions.length > 0 ? pricingOptions : [];
+    }
+
+    // Handle driver pricing separately (not in pricingOptions array)
+    if (driverAvailable !== undefined || driverPrice !== undefined || driverLabel !== undefined) {
+      const finalDriverAvailable = driverAvailable !== undefined ? driverAvailable : vehicle.driverAvailable;
+      const finalDriverPrice = driverPrice !== undefined ? driverPrice : vehicle.driverPrice;
+      const finalDriverLabel = driverLabel !== undefined ? driverLabel : vehicle.driverLabel;
+      
+      if (finalDriverAvailable && finalDriverPrice && finalDriverPrice > 0) {
+        updates.driverPricing = {
+          label: finalDriverLabel || 'with driver',
+          price: finalDriverPrice,
+          currency_symbol: currencySymbol
+        };
+      } else {
+        updates.driverPricing = undefined;
+      }
+    }
+
     Object.assign(vehicle, updates);
     await vehicle.save();
 
@@ -264,8 +384,11 @@ exports.deleteVehicle = async (req,res) => {
 // Get vehicles by owner
 exports.getMyVehicles = async (req,res) => {
   try {
-    // Get all vehicles since this is now a public endpoint
-    const vehicles = await Vehicle.find({}).populate('owner', 'name email phone').sort({ createdAt: -1 });
+    // User-side: Only show published and non-deleted vehicles
+    const vehicles = await Vehicle.find({ 
+      isPublished: true,
+      isDeleted: false 
+    }).populate('owner', 'name email phone').sort({ createdAt: -1 });
     
     // Add title to owner data based on vehicleType
     const vehiclesWithOwnerTitle = vehicles.map(vehicle => {
@@ -326,8 +449,12 @@ exports.getMyFavoriteCategories = async (req,res) => {
     if(!user) return res.status(404).json({ success:false, data:null, message:'User not found' });
 
     const categories = user.favoriteCategories || [];
-    // Also return vehicles grouped by category
-    const vehicles = await Vehicle.find({ category: { $in: categories } }).sort({ createdAt: -1 });
+    // Also return vehicles grouped by category (only published and non-deleted)
+    const vehicles = await Vehicle.find({ 
+      category: { $in: categories },
+      isPublished: true,
+      isDeleted: false
+    }).sort({ createdAt: -1 });
 
     const grouped = categories.map(cat => ({
       category: cat,
@@ -379,7 +506,11 @@ exports.getMyFavoriteCars = async (req,res) => {
       return res.json({ success:true, data:{ cars: [], ids: [] }, message:'Found 0 favorite cars' });
     }
 
-    const cars = await Vehicle.find({ _id: { $in: favoriteIds } })
+    const cars = await Vehicle.find({ 
+      _id: { $in: favoriteIds },
+      isPublished: true,
+      isDeleted: false
+    })
       .populate('owner', 'name email phone businessName businessAddress businessPhone')
       .populate('ratings.user', 'name')
       .sort({ createdAt: -1 });
@@ -403,7 +534,11 @@ exports.addFavoriteCar = async (req,res) => {
       return res.status(400).json({ success:false, data:null, message:'carId is required in request body' });
     }
 
-    const car = await Vehicle.findById(carId).select('_id');
+    const car = await Vehicle.findOne({ 
+      _id: carId,
+      isPublished: true,
+      isDeleted: false
+    }).select('_id');
     if(!car) return res.status(404).json({ success:false, data:null, message:'Car not found' });
 
     const user = await User.findById(userId).select('favoriteItems');

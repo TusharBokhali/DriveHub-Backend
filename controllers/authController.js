@@ -11,27 +11,66 @@ const createToken = (user) => {
 
 exports.register = async (req,res) => {
   try {
-    const { name, email, password, address } = req.body || {};
-    if(!name || !email || !password) return res.status(400).json({ 
-      success: false, 
-      data: null, 
-      message: 'All fields required' 
-    });
+    const { 
+      name, 
+      email, 
+      password, 
+      address, 
+      phone, 
+      role, 
+      preferredLanguage,
+      businessName,
+      businessAddress,
+      businessPhone
+    } = req.body || {};
+
+    // Basic safety check – detailed checks are already done in validateRegister
+    if(!name || !email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        data: null, 
+        message: 'All fields required' 
+      });
+    }
+
+    // Only allow known roles, default to 'user'
+    const finalRole = (role === 'client' || role === 'user') ? role : 'user';
+
+    // If role is 'client', businessName is required
+    if (finalRole === 'client' && !businessName) {
+      return res.status(400).json({ 
+        success: false, 
+        data: null, 
+        message: 'businessName is required for client role' 
+      });
+    }
 
     let user = await User.findOne({ email });
-    if(user) return res.status(400).json({ 
-      success: false, 
-      data: null, 
-      message: 'Email already registered' 
-    });
+    if(user) {
+      return res.status(400).json({ 
+        success: false, 
+        data: null, 
+        message: 'Email already registered' 
+      });
+    }
 
     const salt = await bcrypt.genSalt(10);
     const hashed = await bcrypt.hash(password, salt);
 
-    user = new User({ name, email, password: hashed, role: 'user' });
-    if (address) {
-      user.address = address;
-    }
+    user = new User({
+      name,
+      email,
+      password: hashed,
+      role: finalRole,
+      address: address || undefined,
+      phone: phone || undefined,
+      preferredLanguage: preferredLanguage || undefined,
+      // Business fields (required for client role)
+      businessName: businessName || undefined,
+      businessAddress: businessAddress || undefined,
+      businessPhone: businessPhone || undefined
+    });
+
     await user.save();
 
     const token = createToken(user);
@@ -39,16 +78,43 @@ exports.register = async (req,res) => {
       success: true, 
       data: { 
         token, 
-        user: { id:user._id, name:user.name, email:user.email, role:user.role, address:user.address } 
+        user: { 
+          id: user._id, 
+          name: user.name, 
+          email: user.email, 
+          role: user.role, 
+          phone: user.phone || null,
+          address: user.address || null,
+          preferredLanguage: user.preferredLanguage || null,
+          businessName: user.businessName || null,
+          businessAddress: user.businessAddress || null,
+          businessPhone: user.businessPhone || null
+        } 
       }, 
       message: 'User registered successfully' 
     });
   } catch(err) {
-    console.error(err);
+    console.error('Register error:', err);
+    console.error('Error stack:', err.stack);
+    console.error('Error details:', {
+      message: err.message,
+      name: err.name,
+      code: err.code
+    });
+    
+    // More detailed error response
+    let errorMessage = 'Server error';
+    if (err.name === 'ValidationError') {
+      errorMessage = 'Validation error: ' + Object.values(err.errors).map(e => e.message).join(', ');
+    } else if (err.code === 11000) {
+      errorMessage = 'Email already registered';
+    }
+    
     res.status(500).json({ 
       success: false, 
       data: null, 
-      message: 'Server error' 
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
 };
@@ -100,33 +166,51 @@ exports.login = async (req,res) => {
     });
 
     // Generate token and return success response
+    if (!user._id) {
+      console.error('Login error: User ID is missing');
+      return res.status(500).json({ 
+        success: false, 
+        data: null, 
+        message: 'User data is invalid' 
+      });
+    }
+
     const token = createToken(user);
     res.json({ 
       success: true, 
       data: { 
         token, 
         user: { 
-          id:user._id, 
-          name:user.name, 
-          email:user.email, 
-          role:user.role,
-          phone:user.phone,
-          address:user.address,
-          profileImage:user.profileImage || null,
-          businessName:user.businessName,
-          businessAddress:user.businessAddress,
-          businessPhone:user.businessPhone,
-          preferredLanguage:user.preferredLanguage
+          id: user._id, 
+          name: user.name || null, 
+          email: user.email || null, 
+          role: user.role || 'user',
+          phone: user.phone || null,
+          address: user.address || null,
+          profileImage: user.profileImage || null,
+          businessName: user.businessName || null,
+          businessAddress: user.businessAddress || null,
+          businessPhone: user.businessPhone || null,
+          preferredLanguage: user.preferredLanguage || 'hinglish'
         } 
       }, 
       message: 'Login successful' 
     });
   } catch(err){
     console.error('Login error:', err);
+    console.error('Error stack:', err.stack);
+    console.error('Error details:', {
+      message: err.message,
+      name: err.name,
+      code: err.code
+    });
+    
+    // More detailed error response for debugging
     res.status(500).json({ 
       success: false, 
       data: null, 
-      message: 'Server error occurred during login' 
+      message: 'Server error occurred during login',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
 };

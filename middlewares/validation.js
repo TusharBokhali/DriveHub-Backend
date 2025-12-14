@@ -5,6 +5,9 @@ const { param } = require('express-validator');
 exports.validateRequest = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    // Debug logging to help identify issues
+    console.log('Validation failed - Request body:', JSON.stringify(req.body));
+    console.log('Validation errors:', JSON.stringify(errors.array(), null, 2));
     return res.status(400).json({ 
       success: false,
       data: null,
@@ -33,15 +36,53 @@ exports.validateRegister = [
     .notEmpty()
     .withMessage('Password is required')
     .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+    .withMessage('Password must be at least 6 characters long'),
   body('address')
     .optional()
     .isString()
     .withMessage('Address must be a string')
     .trim(),
-  this.validateRequest
+  // Make phone completely optional
+  body('phone')
+    .optional()
+    .isString()
+    .withMessage('Phone must be a string')
+    .trim(),
+  // preferredLanguage should be optional (as per requirement) but validated if sent
+  body('preferredLanguage')
+    .optional()
+    .isIn(['hindi', 'english', 'hinglish'])
+    .withMessage('preferredLanguage must be one of: hindi, english, hinglish'),
+  // Role validation
+  body('role')
+    .optional()
+    .isIn(['user', 'client'])
+    .withMessage('Role must be either "user" or "client"'),
+  // Business fields - optional but validated if sent
+  body('businessName')
+    .optional()
+    .isString()
+    .withMessage('businessName must be a string')
+    .trim(),
+  body('businessAddress')
+    .optional()
+    .isString()
+    .withMessage('businessAddress must be a string')
+    .trim(),
+  body('businessPhone')
+    .optional()
+    .isString()
+    .withMessage('businessPhone must be a string')
+    .trim(),
+  // Custom validation: if role is 'client', businessName is required
+  body('businessName')
+    .custom((value, { req }) => {
+      if (req.body.role === 'client' && !value) {
+        throw new Error('businessName is required when role is "client"');
+      }
+      return true;
+    }),
+  exports.validateRequest
 ];
 
 exports.validateLogin = [
@@ -56,7 +97,7 @@ exports.validateLogin = [
     .withMessage('Password is required')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
-  this.validateRequest
+  exports.validateRequest
 ];
 
 // Vehicle validation rules
@@ -69,7 +110,7 @@ exports.validateVehicle = [
   body('transmission').optional().isIn(['manual', 'automatic', 'semi-automatic']).withMessage('Invalid transmission type'),
   body('fuelType').optional().isIn(['petrol', 'diesel', 'electric', 'hybrid', 'cng']).withMessage('Invalid fuel type'),
   body('year').optional().isInt({ min: 1900, max: new Date().getFullYear() + 1 }).withMessage('Invalid year'),
-  this.validateRequest
+  exports.validateRequest
 ];
 
 // Booking validation rules
@@ -77,7 +118,7 @@ exports.validateBooking = [
   body('vehicleId').isMongoId().withMessage('Valid vehicle ID is required'),
   body('startAt').isISO8601().withMessage('Valid start date is required'),
   body('endAt').isISO8601().withMessage('Valid end date is required'),
-  this.validateRequest
+  exports.validateRequest
 ];
 
 // Favorite Categories validation rules
@@ -122,7 +163,7 @@ exports.validateFavoriteCategoryBody = [
     .notEmpty().withMessage('categoryId is required')
     .isString().withMessage('categoryId must be a string')
     .isIn(allowedCategories).withMessage(`categoryId must be one of: ${allowedCategories.join(', ')}`),
-  this.validateRequest
+  exports.validateRequest
 ];
 
 exports.validateFavoriteCategoryParam = [
@@ -139,7 +180,7 @@ exports.validateFavoriteCategoryParam = [
 ];
 
 exports.validateFavoriteCategoryGet = [
-  this.validateRequest
+  exports.validateRequest
 ];
 
 // Item favorites (by ObjectId)
@@ -147,7 +188,7 @@ exports.validateFavoriteItemBody = [
   body('itemId')
     .notEmpty().withMessage('itemId is required')
     .isMongoId().withMessage('itemId must be a valid ObjectId'),
-  this.validateRequest
+  exports.validateRequest
 ];
 
 // New: Car favorites unified validators
@@ -155,12 +196,28 @@ exports.validateFavoriteAddBody = [
   body('carId')
     .notEmpty().withMessage('carId is required')
     .isMongoId().withMessage('carId must be a valid ObjectId'),
-  this.validateRequest
+  exports.validateRequest
 ];
 
 exports.validateFavoriteCarParam = [
   param('carId')
     .notEmpty().withMessage('carId is required')
     .isMongoId().withMessage('carId must be a valid ObjectId'),
-  this.validateRequest
+  exports.validateRequest
+];
+
+// Admin vehicle publish validation
+exports.validatePublishVehicle = [
+  body('isPublished')
+    .notEmpty().withMessage('isPublished is required')
+    .isBoolean().withMessage('isPublished must be a boolean (true or false)'),
+  exports.validateRequest
+];
+
+// Vehicle ID parameter validation
+exports.validateVehicleId = [
+  param('vehicleId')
+    .notEmpty().withMessage('Vehicle ID is required')
+    .isMongoId().withMessage('Invalid vehicle ID format'),
+  exports.validateRequest
 ];
