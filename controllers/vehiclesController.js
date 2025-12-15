@@ -10,11 +10,11 @@ exports.createVehicle = async (req,res) => {
       currency
     } = req.body || {};
     
-    // Handle multiple image uploads
+    // Handle multiple image uploads (supports both local disk and Cloudinary)
     let images = [];
     if (req.files && req.files.length > 0) {
       images = req.files.map(file => ({
-        url: `/uploads/${file.filename}`,
+        url: file.path || `/uploads/${file.filename}`,
         filename: file.filename,
         originalName: file.originalname,
         mimetype: file.mimetype,
@@ -258,7 +258,7 @@ exports.updateVehicle = async (req,res) => {
     const updates = req.body;
     if(req.files && req.files.length > 0) {
       updates.images = req.files.map(file => ({
-        url: `/uploads/${file.filename}`,
+        url: file.path || `/uploads/${file.filename}`,
         filename: file.filename,
         originalName: file.originalname,
         mimetype: file.mimetype,

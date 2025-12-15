@@ -8,8 +8,10 @@ exports.createSlider = async (req, res) => {
       type, isActive, order, startDate, endDate 
     } = req.body;
     
-    // Handle image upload
-    const image = req.file ? `/uploads/${req.file.filename}` : null;
+    // Handle image upload (supports both local disk and Cloudinary)
+    const image = req.file
+      ? (req.file.path || `/uploads/${req.file.filename}`)
+      : null;
     
     if (!image) {
       return res.status(400).json({ 
@@ -157,9 +159,9 @@ exports.updateSlider = async (req, res) => {
     
     const updates = req.body;
     
-    // Handle image update
+    // Handle image update (supports both local disk and Cloudinary)
     if (req.file) {
-      updates.image = `/uploads/${req.file.filename}`;
+      updates.image = req.file.path || `/uploads/${req.file.filename}`;
     }
     
     // Convert date strings to Date objects

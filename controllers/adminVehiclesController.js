@@ -173,7 +173,7 @@ exports.createVehicle = async (req, res) => {
     const boolDriverAvailable = driverAvailable === 'true' || driverAvailable === true;
     const boolIsPublished = isPublished === 'true' || isPublished === true;
     
-    // Handle multiple image uploads
+    // Handle multiple image uploads (supports both local disk and Cloudinary)
     let images = [];
     if (req.files && req.files.length > 0) {
       console.log(`✅ Received ${req.files.length} image file(s)`);
@@ -183,11 +183,12 @@ exports.createVehicle = async (req, res) => {
           originalName: file.originalname,
           mimetype: file.mimetype,
           size: file.size,
-          fieldname: file.fieldname
+          fieldname: file.fieldname,
+          path: file.path,
         });
         
         return {
-          url: `/uploads/${file.filename}`,
+          url: file.path || `/uploads/${file.filename}`,
           filename: file.filename,
           originalName: file.originalname,
           mimetype: file.mimetype,
@@ -483,10 +484,10 @@ exports.updateVehicle = async (req, res) => {
     
     const updates = req.body;
     
-    // Handle image uploads
+    // Handle image uploads (supports both local disk and Cloudinary)
     if (req.files && req.files.length > 0) {
       updates.images = req.files.map(file => ({
-        url: `/uploads/${file.filename}`,
+        url: file.path || `/uploads/${file.filename}`,
         filename: file.filename,
         originalName: file.originalname,
         mimetype: file.mimetype,

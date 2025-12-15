@@ -3,8 +3,7 @@ const router = express.Router();
 const { protect } = require('../../middlewares/auth');
 const { requireRole } = require('../../middlewares/role');
 const { validateVehicle, validatePublishVehicle, validateVehicleId } = require('../../middlewares/validation');
-const multer = require('multer');
-const path = require('path');
+const upload = require('../../middlewares/upload');
 const {
   getAllVehicles,
   getVehicleById,
@@ -13,32 +12,6 @@ const {
   deleteVehicle,
   publishVehicle
 } = require('../../controllers/adminVehiclesController');
-
-// Multer configuration for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed!'), false);
-    }
-  },
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit per file
-    files: 5 // Maximum 5 files
-  }
-});
 
 // All admin routes require authentication
 // Note: Add requireRole('admin') if you have admin role in User model
