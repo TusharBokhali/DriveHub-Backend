@@ -201,12 +201,43 @@ exports.createVehicle = async (req, res) => {
       console.log('Request files:', req.files);
     }
     
-    // Parse features if it's a string
+    // Parse and format features
+    // Frontend se simple array aayegi: ["ac","camera","wifi","bluetooth"]
+    // Model me format: [{name: "ac", icon: "", available: true}, ...]
     let parsedFeatures = [];
     if (features) {
       try {
-        parsedFeatures = typeof features === 'string' ? JSON.parse(features) : features;
+        // Parse if string (form-data me string aayega)
+        let featuresArray = typeof features === 'string' ? JSON.parse(features) : features;
+        
+        // Ensure it's an array
+        if (!Array.isArray(featuresArray)) {
+          featuresArray = [];
+        }
+        
+        // Convert simple string array to proper format
+        parsedFeatures = featuresArray.map(feature => {
+          // Agar already object format me hai to use as-is
+          if (typeof feature === 'object' && feature !== null && feature.name) {
+            return {
+              name: feature.name,
+              icon: feature.icon || '',
+              available: feature.available !== undefined ? feature.available : true
+            };
+          }
+          // Agar simple string hai to convert karo
+          if (typeof feature === 'string') {
+            return {
+              name: feature.trim(),
+              icon: '',
+              available: true
+            };
+          }
+          // Invalid format, skip
+          return null;
+        }).filter(f => f !== null); // Remove null entries
       } catch (e) {
+        console.error('Error parsing features:', e);
         parsedFeatures = [];
       }
     }
@@ -556,11 +587,42 @@ exports.updateVehicle = async (req, res) => {
       }
     }
     
-    // Parse features if provided
+    // Parse and format features if provided
+    // Frontend se simple array aayegi: ["ac","camera","wifi","bluetooth"]
+    // Model me format: [{name: "ac", icon: "", available: true}, ...]
     if (updates.features !== undefined) {
       try {
-        updates.features = typeof updates.features === 'string' ? JSON.parse(updates.features) : updates.features;
+        // Parse if string (form-data me string aayega)
+        let featuresArray = typeof updates.features === 'string' ? JSON.parse(updates.features) : updates.features;
+        
+        // Ensure it's an array
+        if (!Array.isArray(featuresArray)) {
+          featuresArray = [];
+        }
+        
+        // Convert simple string array to proper format
+        updates.features = featuresArray.map(feature => {
+          // Agar already object format me hai to use as-is
+          if (typeof feature === 'object' && feature !== null && feature.name) {
+            return {
+              name: feature.name,
+              icon: feature.icon || '',
+              available: feature.available !== undefined ? feature.available : true
+            };
+          }
+          // Agar simple string hai to convert karo
+          if (typeof feature === 'string') {
+            return {
+              name: feature.trim(),
+              icon: '',
+              available: true
+            };
+          }
+          // Invalid format, skip
+          return null;
+        }).filter(f => f !== null); // Remove null entries
       } catch (e) {
+        console.error('Error parsing features:', e);
         // Keep existing features if parsing fails
         delete updates.features;
       }
