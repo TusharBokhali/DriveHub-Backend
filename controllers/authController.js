@@ -281,7 +281,9 @@ exports.login = async (req,res) => {
         ? `Welcome back, ${user.name}! Manage your vehicles and bookings.`
         : `Welcome back, ${user.name}! Explore our vehicles and book your ride.`;
       
-      await createAndSendNotification(
+      console.log(`📧 Attempting to send welcome notification to user ${user.email} (${user._id})`);
+      
+      const notification = await createAndSendNotification(
         user._id,
         'system',
         'Welcome Back! 👋',
@@ -293,9 +295,18 @@ exports.login = async (req,res) => {
         },
         null
       );
-      console.log(`✅ Welcome notification sent to user ${user.email} (${user._id})`);
+      
+      if (notification) {
+        console.log(`✅ Welcome notification created and sent to user ${user.email} (${user._id}), Notification ID: ${notification._id}`);
+      } else {
+        console.warn(`⚠️ Welcome notification created but not sent (no push tokens) for user ${user.email} (${user._id})`);
+      }
     } catch (notifError) {
-      console.error(`❌ Error sending welcome notification to user ${user.email}:`, notifError);
+      console.error(`❌ Error sending welcome notification to user ${user.email} (${user._id}):`, notifError);
+      console.error('Notification error details:', {
+        message: notifError.message,
+        stack: notifError.stack
+      });
       // Don't fail login if notification fails
     }
     

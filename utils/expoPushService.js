@@ -161,6 +161,7 @@ exports.sendMulticastExpoNotification = async (expoPushTokens, title, body, data
     let successCount = 0;
     let failureCount = 0;
     const tokensToRemove = [];
+    const errorDetails = [];
 
     tickets.forEach((ticket, index) => {
       if (ticket.status === 'ok') {
@@ -168,19 +169,37 @@ exports.sendMulticastExpoNotification = async (expoPushTokens, title, body, data
       } else if (ticket.status === 'error') {
         failureCount++;
         
+        // Log detailed error
+        const errorInfo = {
+          token: validTokens[index] ? validTokens[index].substring(0, 30) + '...' : 'unknown',
+          error: ticket.message || 'Unknown error',
+          details: ticket.details || {}
+        };
+        errorDetails.push(errorInfo);
+        console.error(`❌ Expo notification failed for token ${index + 1}:`, JSON.stringify(errorInfo, null, 2));
+        
         // Check if device is not registered
         if (ticket.details && ticket.details.error === 'DeviceNotRegistered') {
           tokensToRemove.push(validTokens[index]);
+          console.log(`🗑️ Marking token as invalid (DeviceNotRegistered): ${validTokens[index].substring(0, 30)}...`);
         }
       }
     });
 
-    return {
+    const result = {
       success: successCount > 0,
       successCount: successCount,
       failureCount: failureCount + invalidTokens.length,
-      invalidTokens: [...tokensToRemove, ...invalidTokens]
+      invalidTokens: [...tokensToRemove, ...invalidTokens],
+      errors: errorDetails
     };
+    
+    if (errorDetails.length > 0) {
+      console.log(`📊 Expo notification summary: ${successCount} successful, ${failureCount} failed`);
+      console.log(`Error details:`, JSON.stringify(errorDetails, null, 2));
+    }
+    
+    return result;
   } catch (error) {
     console.error('Error sending multicast Expo notification:', error);
     return { success: false, error: error.message };

@@ -38,8 +38,8 @@ exports.createAndSendNotification = async (userId, type, title, message, data = 
     // Get user push tokens (supports both Expo and FCM)
     if (targetUser.pushTokens && targetUser.pushTokens.length > 0) {
       // Separate Expo and FCM tokens
-      const expoTokens = user.pushTokens.filter(token => isExpoPushToken(token));
-      const fcmTokens = user.pushTokens.filter(token => !isExpoPushToken(token));
+      const expoTokens = targetUser.pushTokens.filter(token => isExpoPushToken(token));
+      const fcmTokens = targetUser.pushTokens.filter(token => !isExpoPushToken(token));
       
       const notificationData = {
         notificationId: notification._id.toString(),
@@ -56,13 +56,17 @@ exports.createAndSendNotification = async (userId, type, title, message, data = 
       
       // Send Expo notifications
       if (expoTokens.length > 0) {
+        console.log(`📤 Sending Expo notification to ${expoTokens.length} token(s) for user ${targetUser.email}`);
         expoResult = await sendMulticastExpoNotification(
           expoTokens,
           title,
           message,
           notificationData
         );
-        console.log(`Expo notifications sent to user ${userId}: ${expoResult.successCount} successful, ${expoResult.failureCount} failed`);
+        console.log(`📊 Expo notifications sent to user ${userId}: ${expoResult.successCount} successful, ${expoResult.failureCount} failed`);
+        if (expoResult.errors && expoResult.errors.length > 0) {
+          console.error(`❌ Expo notification errors:`, expoResult.errors);
+        }
       }
       
       // Send FCM notifications (if Firebase is configured)
@@ -85,8 +89,8 @@ exports.createAndSendNotification = async (userId, type, title, message, data = 
       ];
       
       if (allInvalidTokens.length > 0) {
-        user.pushTokens = user.pushTokens.filter(token => !allInvalidTokens.includes(token));
-        await user.save();
+        targetUser.pushTokens = targetUser.pushTokens.filter(token => !allInvalidTokens.includes(token));
+        await targetUser.save();
         console.log(`Removed ${allInvalidTokens.length} invalid push tokens for user ${userId}`);
       }
       
