@@ -511,6 +511,321 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "Booking Flow (New)",
+			"item": [
+				{
+					"name": "User - Create Booking",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "phone",
+									"value": "9876543210",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "email",
+									"value": "user@example.com",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "description",
+									"value": "Need vehicle for weekend trip",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "vehicleId",
+									"value": "{{vehicle_id}}",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "paymentMethod",
+									"value": "online",
+									"type": "text",
+									"enabled": true,
+									"description": "Options: online or pay_to_driver"
+								},
+								{
+									"key": "documents",
+									"type": "file",
+									"src": [],
+									"enabled": true,
+									"description": "Upload up to 5 document images (Aadhaar, PAN, RC, Light Bill, etc.)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/booking-flow/bookings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"booking-flow",
+								"bookings"
+							]
+						},
+						"description": "Create a new booking with user details and document images. Initial status: pending, paymentStatus: unpaid"
+					}
+				},
+				{
+					"name": "User - Get My Bookings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/booking-flow/bookings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"booking-flow",
+								"bookings"
+							]
+						},
+						"description": "Get all bookings for the authenticated user"
+					}
+				},
+				{
+					"name": "User - Get Booking by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/booking-flow/bookings/{{booking_flow_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"booking-flow",
+								"bookings",
+								"{{booking_flow_id}}"
+							]
+						},
+						"description": "Get booking details by ID"
+					}
+				},
+				{
+					"name": "Admin - Approve Booking",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"adminNotes\": \"Documents verified, booking approved\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/booking-flow/bookings/{{booking_flow_id}}/approve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"booking-flow",
+								"bookings",
+								"{{booking_flow_id}}",
+								"approve"
+							]
+						},
+						"description": "Admin endpoint to approve a booking. Changes bookingStatus to 'approved'"
+					}
+				},
+				{
+					"name": "Admin - Reject Booking",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"adminNotes\": \"Documents incomplete, booking rejected\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/booking-flow/bookings/{{booking_flow_id}}/reject",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"booking-flow",
+								"bookings",
+								"{{booking_flow_id}}",
+								"reject"
+							]
+						},
+						"description": "Admin endpoint to reject a booking. Changes bookingStatus to 'rejected'"
+					}
+				},
+				{
+					"name": "Admin - Start Booking (Mark as Ongoing)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"adminNotes\": \"Trip started, vehicle handed over to customer\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/booking-flow/bookings/{{booking_flow_id}}/start",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"booking-flow",
+								"bookings",
+								"{{booking_flow_id}}",
+								"start"
+							]
+						},
+						"description": "Admin endpoint to mark booking as ongoing (trip started). Changes bookingStatus to 'ongoing'. Booking must be approved first."
+					}
+				},
+				{
+					"name": "Admin - Complete Booking with Payment (Online)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"paymentConfirmed\": true,\n  \"adminNotes\": \"Trip completed, online payment received via Razorpay\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/booking-flow/bookings/{{booking_flow_id}}/complete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"booking-flow",
+								"bookings",
+								"{{booking_flow_id}}",
+								"complete"
+							]
+						},
+						"description": "Admin endpoint to complete booking and confirm payment. For online payment method, requires paymentConfirmed: true. Changes bookingStatus to 'completed' and paymentStatus to 'paid'. Booking must be ongoing first."
+					}
+				},
+				{
+					"name": "Admin - Complete Booking with Payment (Pay to Driver)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"paymentConfirmed\": true,\n  \"adminNotes\": \"Trip completed, payment received from driver\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/booking-flow/bookings/{{booking_flow_id}}/complete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"booking-flow",
+								"bookings",
+								"{{booking_flow_id}}",
+								"complete"
+							]
+						},
+						"description": "Admin endpoint to complete booking and confirm payment. For pay_to_driver method, admin confirms payment was received. Changes bookingStatus to 'completed' and paymentStatus to 'paid'. Booking must be ongoing first."
+					}
+				},
+				{
+					"name": "Admin - Get All Bookings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/booking-flow/bookings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"booking-flow",
+								"bookings"
+							]
+						},
+						"description": "Admin endpoint to get all bookings in the system"
+					}
+				}
+			]
 		}
 	],
 	"variable": [
@@ -537,6 +852,16 @@
 		{
 			"key": "user_id",
 			"value": ""
+		},
+		{
+			"key": "admin_token",
+			"value": "",
+			"description": "Admin user authentication token"
+		},
+		{
+			"key": "booking_flow_id",
+			"value": "",
+			"description": "Booking Flow ID for admin operations"
 		}
 	]
 }

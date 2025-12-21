@@ -3,7 +3,7 @@ const router = express.Router();
 const { protect } = require('../middlewares/auth');
 const { register, login, getProfile, updateProfile } = require('../controllers/authController');
 const { validateRegister, validateLogin } = require('../middlewares/validation');
-const multer = require('multer');
+const upload = require('../middlewares/upload');
 const path = require('path');
 const fs = require('fs');
 
@@ -13,32 +13,33 @@ if (!fs.existsSync(uploadsDir)) {
   try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
 }
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/')
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname)
-  }
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    // Accept images only
-    if (!file.mimetype || !file.mimetype.startsWith('image/')) {
-      return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'profileImage'));
-    }
-    cb(null, true);
-  }
-});
-
 router.post('/register', validateRegister, register);
 router.post('/login', validateLogin, login);
 
 // Protected routes
 router.get('/profile', protect, getProfile);
-router.put('/profile', protect, upload.single('profileImage'), updateProfile);
+
+// Update profile with proper error handling for file uploads
+router.put('/profile', protect, (req, res, next) => {
+  upload.single('profileImage')(req, res, (err) => {
+    if (err) {
+      console.error('Profile image upload error:', err);
+      let errorMessage = 'File upload failed';
+      
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        errorMessage = 'Profile image is too large. Maximum size is 10MB.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: errorMessage
+      });
+    }
+    next();
+  });
+}, updateProfile);
 
 module.exports = router;

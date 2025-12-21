@@ -56,8 +56,8 @@ exports.validateRegister = [
   // Role validation
   body('role')
     .optional()
-    .isIn(['user', 'client'])
-    .withMessage('Role must be either "user" or "client"'),
+    .isIn(['user', 'client', 'admin'])
+    .withMessage('Role must be either "user", "client", or "admin"'),
   // Business fields - optional but validated if sent
   body('businessName')
     .optional()
@@ -118,6 +118,38 @@ exports.validateBooking = [
   body('vehicleId').isMongoId().withMessage('Valid vehicle ID is required'),
   body('startAt').isISO8601().withMessage('Valid start date is required'),
   body('endAt').isISO8601().withMessage('Valid end date is required'),
+  exports.validateRequest
+];
+
+// Booking Flow validation rules
+exports.validateBookingFlow = [
+  body('phone')
+    .notEmpty()
+    .withMessage('Phone is required')
+    .isString()
+    .withMessage('Phone must be a string')
+    .trim(),
+  body('email')
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
+  body('vehicleId')
+    .notEmpty()
+    .withMessage('Vehicle ID is required')
+    .isMongoId()
+    .withMessage('Valid vehicle ID is required'),
+  body('paymentMethod')
+    .notEmpty()
+    .withMessage('Payment method is required')
+    .isIn(['online', 'pay_to_driver'])
+    .withMessage('Payment method must be either "online" or "pay_to_driver"'),
+  body('description')
+    .optional()
+    .isString()
+    .withMessage('Description must be a string')
+    .trim(),
   exports.validateRequest
 ];
 

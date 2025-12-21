@@ -1,12 +1,80 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const fs = require('fs');
 
 // Set default JWT secret if not provided
 const JWT_SECRET = process.env.JWT_SECRET || 'your_default_jwt_secret_key_here_make_it_long_and_random_12345';
 
 const createToken = (user) => {
   return jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
+};
+
+// Helper function to validate and normalize profile image URL
+const validateProfileImageUrl = (imageUrl) => {
+  if (!imageUrl) return null;
+  
+  // Cloudinary URLs are permanent and safe
+  if (imageUrl.startsWith('https://res.cloudinary.com')) {
+    return imageUrl;
+  }
+  
+  // HTTP Cloudinary URLs - convert to HTTPS for security
+  if (imageUrl.startsWith('http://res.cloudinary.com')) {
+    return imageUrl.replace('http://', 'https://');
+  }
+  
+  // Local storage paths - verify file exists
+  if (imageUrl.startsWith('/uploads/')) {
+    const filename = imageUrl.replace('/uploads/', '');
+    const filePath = path.join(__dirname, '..', 'uploads', filename);
+    if (fs.existsSync(filePath)) {
+      return imageUrl;
+    }
+    // File doesn't exist - return null (don't break frontend)
+    console.warn('Profile image file not found:', filePath);
+    return null;
+  }
+  
+  // Other URLs (external) - allow but log
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+  
+  return null;
+};
+
+// Helper function to get profile image URL
+const getProfileImageUrl = (profileImage) => {
+  if (!profileImage) return null;
+  
+  // If it's already a full URL (Cloudinary), return as is
+  if (profileImage.startsWith('http://') || profileImage.startsWith('https://')) {
+    return profileImage;
+  }
+  
+  // If it's a local path, ensure it starts with /uploads/
+  if (profileImage.startsWith('/uploads/')) {
+    // Check if file exists
+    const filePath = path.join(__dirname, '..', profileImage);
+    if (fs.existsSync(filePath)) {
+      return profileImage;
+    }
+    // File doesn't exist, return null
+    return null;
+  }
+  
+  // If it's just a filename, prepend /uploads/
+  if (!profileImage.startsWith('/')) {
+    const filePath = path.join(__dirname, '..', 'uploads', profileImage);
+    if (fs.existsSync(filePath)) {
+      return `/uploads/${profileImage}`;
+    }
+    return null;
+  }
+  
+  return profileImage;
 };
 
 exports.register = async (req,res) => {
@@ -278,11 +346,72 @@ exports.updateProfile = async (req,res) => {
     if(businessPhone) user.businessPhone = businessPhone;
     if(preferredLanguage) user.preferredLanguage = preferredLanguage;
     
-    // Handle profile image upload
+    // Handle profile image upload - Safe and persistent storage
     if(req.file) {
-      user.profileImage = `/uploads/${req.file.filename}`;
+      let profileImageUrl = null;
+      
+      // Check if Cloudinary was used (preferred for persistent storage)
+      if(req.file.secure_url) {
+        // Cloudinary secure URL (HTTPS) - Best for long-term storage
+        profileImageUrl = req.file.secure_url;
+        console.log('Profile image uploaded to Cloudinary:', profileImageUrl);
+      } else if(req.file.path && (req.file.path.startsWith('http://') || req.file.path.startsWith('https://'))) {
+        // Cloudinary path (URL) - Ensure HTTPS
+        profileImageUrl = req.file.path.startsWith('https://') ? req.file.path : req.file.path.replace('http://', 'https://');
+        console.log('Profile image uploaded to Cloudinary:', profileImageUrl);
+      } else {
+        // Local storage fallback - ensure path is correct
+        const filename = req.file.filename || req.file.originalname;
+        profileImageUrl = `/uploads/${filename}`;
+        console.log('Profile image saved locally:', profileImageUrl);
+        
+        // Verify file exists
+        const filePath = path.join(__dirname, '..', 'uploads', filename);
+        if (!fs.existsSync(filePath)) {
+          console.error('Warning: Profile image file not found at:', filePath);
+          return res.status(500).json({
+            success: false,
+            data: null,
+            message: 'Failed to save profile image. Please try again.'
+          });
+        }
+      }
+      
+      // Delete old profile image if exists (only for Cloudinary to save storage)
+      if(user.profileImage && user.profileImage.startsWith('https://res.cloudinary.com')) {
+        // Old Cloudinary image - can be deleted if needed (optional, Cloudinary has free tier)
+        // For now, we keep old images for backup
+        console.log('Old profile image (Cloudinary):', user.profileImage);
+      } else if(user.profileImage && user.profileImage.startsWith('/uploads/')) {
+        // Old local file - delete to save space
+        const oldFilePath = path.join(__dirname, '..', user.profileImage);
+        if(fs.existsSync(oldFilePath)) {
+          try {
+            fs.unlinkSync(oldFilePath);
+            console.log('Old local profile image deleted:', oldFilePath);
+          } catch(err) {
+            console.error('Error deleting old profile image:', err);
+            // Don't fail the request if deletion fails
+          }
+        }
+      }
+      
+      // Validate and save new profile image URL
+      const validatedUrl = validateProfileImageUrl(profileImageUrl);
+      if (validatedUrl) {
+        user.profileImage = validatedUrl;
+        console.log('Profile image saved to database:', validatedUrl);
+      } else {
+        console.error('Invalid profile image URL, not saving:', profileImageUrl);
+        return res.status(500).json({
+          success: false,
+          data: null,
+          message: 'Failed to save profile image. Please try again.'
+        });
+      }
     }
 
+    // Save user with validated profile image
     await user.save();
     
     // Generate new token for updated user
