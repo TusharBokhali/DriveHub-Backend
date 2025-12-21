@@ -19,6 +19,13 @@ const userSchema = new mongoose.Schema({
   favoriteCategories: { type: [String], default: [] },
   // Item favorites: store Vehicle/Object IDs
   favoriteItems: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle' }],
+  // Push notification tokens (supports both FCM and Expo)
+  // Format: Expo tokens start with "ExponentPushToken[...]"
+  // FCM tokens are long strings without "ExponentPushToken" prefix
+  pushTokens: [{ 
+    type: String,
+    default: []
+  }],
   createdAt: {type:Date, default: Date.now}
 });
 

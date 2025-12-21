@@ -1,5 +1,6 @@
 const BookingFlow = require('../models/BookingFlow');
 const Vehicle = require('../models/Vehicle');
+const { createAndSendNotification } = require('./notificationController');
 
 /**
  * POST /api/booking-flow/bookings
@@ -88,6 +89,31 @@ exports.createBooking = async (req, res) => {
 
     // Populate vehicle details for response
     await booking.populate('vehicleId', 'title category images price');
+
+    // SECURITY: Send notification ONLY to user who created booking
+    const bookingOwnerId = booking.user._id || booking.user;
+    const bookingOwnerEmail = req.user.email;
+    
+    console.log(`📝 Booking created by user ${bookingOwnerEmail} (${bookingOwnerId}), Booking ID: ${booking._id}`);
+    
+    try {
+      await createAndSendNotification(
+        bookingOwnerId, // Only booking creator gets notification
+        'booking',
+        'Booking Created',
+        'Your booking has been created and is pending admin approval.',
+        {
+          action: 'booking_created',
+          status: 'pending',
+          bookingId: booking._id.toString()
+        },
+        booking._id
+      );
+      console.log(`✅ Notification sent to booking creator: ${bookingOwnerEmail} (${bookingOwnerId})`);
+    } catch (notifError) {
+      console.error(`❌ Error sending notification to booking creator ${bookingOwnerEmail}:`, notifError);
+      // Don't fail the request if notification fails
+    }
 
     res.status(201).json({
       success: true,
@@ -182,10 +208,26 @@ exports.getBookingById = async (req, res) => {
 /**
  * POST /api/booking-flow/bookings/:id/approve
  * Admin API to approve booking
+ * SECURITY: Only admin can approve, notification goes to booking owner only
  */
 exports.approveBooking = async (req, res) => {
   try {
-    const booking = await BookingFlow.findById(req.params.id);
+    const adminId = req.user._id; // Admin who is approving
+    const adminEmail = req.user.email;
+    const adminRole = req.user.role;
+    
+    // SECURITY: Verify admin role
+    if (adminRole !== 'admin') {
+      console.error(`Security: Non-admin user ${adminEmail} (${adminId}) attempted to approve booking`);
+      return res.status(403).json({
+        success: false,
+        data: null,
+        message: 'Forbidden: Admin role required'
+      });
+    }
+    
+    const booking = await BookingFlow.findById(req.params.id)
+      .populate('user', 'name email role');
 
     if (!booking) {
       return res.status(404).json({
@@ -203,6 +245,12 @@ exports.approveBooking = async (req, res) => {
       });
     }
 
+    // SECURITY: Get booking owner ID (user who created booking)
+    const bookingOwnerId = booking.user._id || booking.user;
+    const bookingOwnerEmail = booking.user.email || 'Unknown';
+    
+    console.log(`🔐 Admin ${adminEmail} (${adminId}) approving booking ${req.params.id} for user ${bookingOwnerEmail} (${bookingOwnerId})`);
+
     booking.bookingStatus = 'approved';
     booking.approvedAt = new Date();
     if (req.body.adminNotes) {
@@ -213,6 +261,27 @@ exports.approveBooking = async (req, res) => {
 
     await booking.populate('user', 'name email phone');
     await booking.populate('vehicleId', 'title category images price');
+
+    // SECURITY: Send notification ONLY to booking owner (user who created booking)
+    try {
+      await createAndSendNotification(
+        bookingOwnerId, // Only booking owner gets notification
+        'booking',
+        'Booking Approved',
+        `Your booking for ${booking.vehicleId?.title || 'vehicle'} has been approved!`,
+        {
+          action: 'booking_approved',
+          status: 'approved',
+          vehicleTitle: booking.vehicleId?.title,
+          approvedBy: adminEmail
+        },
+        booking._id
+      );
+      console.log(`✅ Notification sent to booking owner: ${bookingOwnerEmail} (${bookingOwnerId})`);
+    } catch (notifError) {
+      console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
+      // Don't fail the request if notification fails
+    }
 
     res.json({
       success: true,
@@ -232,10 +301,26 @@ exports.approveBooking = async (req, res) => {
 /**
  * POST /api/booking-flow/bookings/:id/reject
  * Admin API to reject booking
+ * SECURITY: Only admin can reject, notification goes to booking owner only
  */
 exports.rejectBooking = async (req, res) => {
   try {
-    const booking = await BookingFlow.findById(req.params.id);
+    const adminId = req.user._id; // Admin who is rejecting
+    const adminEmail = req.user.email;
+    const adminRole = req.user.role;
+    
+    // SECURITY: Verify admin role
+    if (adminRole !== 'admin') {
+      console.error(`Security: Non-admin user ${adminEmail} (${adminId}) attempted to reject booking`);
+      return res.status(403).json({
+        success: false,
+        data: null,
+        message: 'Forbidden: Admin role required'
+      });
+    }
+    
+    const booking = await BookingFlow.findById(req.params.id)
+      .populate('user', 'name email role');
 
     if (!booking) {
       return res.status(404).json({
@@ -253,6 +338,12 @@ exports.rejectBooking = async (req, res) => {
       });
     }
 
+    // SECURITY: Get booking owner ID (user who created booking)
+    const bookingOwnerId = booking.user._id || booking.user;
+    const bookingOwnerEmail = booking.user.email || 'Unknown';
+    
+    console.log(`🔐 Admin ${adminEmail} (${adminId}) rejecting booking ${req.params.id} for user ${bookingOwnerEmail} (${bookingOwnerId})`);
+
     booking.bookingStatus = 'rejected';
     booking.rejectedAt = new Date();
     if (req.body.adminNotes) {
@@ -263,6 +354,28 @@ exports.rejectBooking = async (req, res) => {
 
     await booking.populate('user', 'name email phone');
     await booking.populate('vehicleId', 'title category images price');
+
+    // SECURITY: Send notification ONLY to booking owner (user who created booking)
+    try {
+      const rejectionReason = req.body.adminNotes || 'Please contact support for more information.';
+      await createAndSendNotification(
+        bookingOwnerId, // Only booking owner gets notification
+        'booking',
+        'Booking Rejected',
+        `Your booking for ${booking.vehicleId?.title || 'vehicle'} has been rejected. ${rejectionReason}`,
+        {
+          action: 'booking_rejected',
+          status: 'rejected',
+          vehicleTitle: booking.vehicleId?.title,
+          reason: rejectionReason,
+          rejectedBy: adminEmail
+        },
+        booking._id
+      );
+      console.log(`✅ Notification sent to booking owner: ${bookingOwnerEmail} (${bookingOwnerId})`);
+    } catch (notifError) {
+      console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
+    }
 
     res.json({
       success: true,
@@ -282,10 +395,26 @@ exports.rejectBooking = async (req, res) => {
 /**
  * POST /api/booking-flow/bookings/:id/start
  * Admin API to mark booking as ongoing (trip started)
+ * SECURITY: Only admin can start, notification goes to booking owner only
  */
 exports.startBooking = async (req, res) => {
   try {
-    const booking = await BookingFlow.findById(req.params.id);
+    const adminId = req.user._id; // Admin who is starting trip
+    const adminEmail = req.user.email;
+    const adminRole = req.user.role;
+    
+    // SECURITY: Verify admin role
+    if (adminRole !== 'admin') {
+      console.error(`Security: Non-admin user ${adminEmail} (${adminId}) attempted to start booking`);
+      return res.status(403).json({
+        success: false,
+        data: null,
+        message: 'Forbidden: Admin role required'
+      });
+    }
+    
+    const booking = await BookingFlow.findById(req.params.id)
+      .populate('user', 'name email role');
 
     if (!booking) {
       return res.status(404).json({
@@ -303,6 +432,12 @@ exports.startBooking = async (req, res) => {
       });
     }
 
+    // SECURITY: Get booking owner ID (user who created booking)
+    const bookingOwnerId = booking.user._id || booking.user;
+    const bookingOwnerEmail = booking.user.email || 'Unknown';
+    
+    console.log(`🔐 Admin ${adminEmail} (${adminId}) starting booking ${req.params.id} for user ${bookingOwnerEmail} (${bookingOwnerId})`);
+
     booking.bookingStatus = 'ongoing';
     booking.startedAt = new Date();
     if (req.body.adminNotes) {
@@ -313,6 +448,26 @@ exports.startBooking = async (req, res) => {
 
     await booking.populate('user', 'name email phone');
     await booking.populate('vehicleId', 'title category images price');
+
+    // SECURITY: Send notification ONLY to booking owner (user who created booking)
+    try {
+      await createAndSendNotification(
+        bookingOwnerId, // Only booking owner gets notification
+        'booking',
+        'Trip Started',
+        `Your trip with ${booking.vehicleId?.title || 'vehicle'} has started! Have a safe journey.`,
+        {
+          action: 'trip_started',
+          status: 'ongoing',
+          vehicleTitle: booking.vehicleId?.title,
+          startedBy: adminEmail
+        },
+        booking._id
+      );
+      console.log(`✅ Notification sent to booking owner: ${bookingOwnerEmail} (${bookingOwnerId})`);
+    } catch (notifError) {
+      console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
+    }
 
     res.json({
       success: true,
@@ -332,10 +487,26 @@ exports.startBooking = async (req, res) => {
 /**
  * POST /api/booking-flow/bookings/:id/complete
  * Admin API to mark booking as completed and handle payment
+ * SECURITY: Only admin can complete, notification goes to booking owner only
  */
 exports.completeBooking = async (req, res) => {
   try {
-    const booking = await BookingFlow.findById(req.params.id);
+    const adminId = req.user._id; // Admin who is completing
+    const adminEmail = req.user.email;
+    const adminRole = req.user.role;
+    
+    // SECURITY: Verify admin role
+    if (adminRole !== 'admin') {
+      console.error(`Security: Non-admin user ${adminEmail} (${adminId}) attempted to complete booking`);
+      return res.status(403).json({
+        success: false,
+        data: null,
+        message: 'Forbidden: Admin role required'
+      });
+    }
+    
+    const booking = await BookingFlow.findById(req.params.id)
+      .populate('user', 'name email role');
 
     if (!booking) {
       return res.status(404).json({
@@ -352,6 +523,12 @@ exports.completeBooking = async (req, res) => {
         message: `Booking cannot be completed. Current status: ${booking.bookingStatus}. Booking must be ongoing first.`
       });
     }
+
+    // SECURITY: Get booking owner ID (user who created booking)
+    const bookingOwnerId = booking.user._id || booking.user;
+    const bookingOwnerEmail = booking.user.email || 'Unknown';
+    
+    console.log(`🔐 Admin ${adminEmail} (${adminId}) completing booking ${req.params.id} for user ${bookingOwnerEmail} (${bookingOwnerId})`);
 
     // Handle payment based on payment method
     if (booking.paymentMethod === 'online') {
@@ -399,6 +576,27 @@ exports.completeBooking = async (req, res) => {
 
     await booking.populate('user', 'name email phone');
     await booking.populate('vehicleId', 'title category images price');
+
+    // SECURITY: Send notification ONLY to booking owner (user who created booking)
+    try {
+      await createAndSendNotification(
+        bookingOwnerId, // Only booking owner gets notification
+        'booking',
+        'Trip Completed',
+        `Your trip with ${booking.vehicleId?.title || 'vehicle'} has been completed successfully! Payment status: ${booking.paymentStatus}.`,
+        {
+          action: 'trip_completed',
+          status: 'completed',
+          paymentStatus: booking.paymentStatus,
+          vehicleTitle: booking.vehicleId?.title,
+          completedBy: adminEmail
+        },
+        booking._id
+      );
+      console.log(`✅ Notification sent to booking owner: ${bookingOwnerEmail} (${bookingOwnerId})`);
+    } catch (notifError) {
+      console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
+    }
 
     res.json({
       success: true,

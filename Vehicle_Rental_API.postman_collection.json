@@ -33,7 +33,8 @@
 								"auth",
 								"register"
 							]
-						}
+						},
+						"description": "Register new user. After successful registration, a welcome notification is automatically sent to the user."
 					}
 				},
 				{
@@ -87,7 +88,8 @@
 								"auth",
 								"login"
 							]
-						}
+						},
+						"description": "User login. After successful login, a welcome notification is automatically sent to the user."
 					}
 				},
 				{
@@ -826,6 +828,297 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Update Push Token (Expo/FCM)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pushToken\": \"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/notifications/push-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"push-token"
+							]
+						},
+						"description": "Update user's push token (supports both Expo and FCM). Token automatically linked to authenticated user. Expo tokens start with 'ExponentPushToken[...]', FCM tokens are long strings."
+					}
+				},
+				{
+					"name": "Remove Push Token (Logout)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pushToken\": \"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/notifications/push-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"push-token"
+							]
+						},
+						"description": "Remove push token when user logs out"
+					}
+				},
+				{
+					"name": "Get All Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/notifications?page=1&limit=20&unreadOnly=false",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"notifications"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Items per page (default: 20)"
+								},
+								{
+									"key": "unreadOnly",
+									"value": "false",
+									"description": "Get only unread notifications (true/false)"
+								}
+							]
+						},
+						"description": "Get all notifications for authenticated user with pagination. Returns unread count and total count."
+					}
+				},
+				{
+					"name": "Get Unread Notifications Only",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/notifications?unreadOnly=true",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"notifications"
+							],
+							"query": [
+								{
+									"key": "unreadOnly",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Get only unread notifications"
+					}
+				},
+				{
+					"name": "Get Notification by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/notifications/{{notification_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"{{notification_id}}"
+							]
+						},
+						"description": "Get notification details by ID"
+					}
+				},
+				{
+					"name": "Mark Notification as Read",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/notifications/{{notification_id}}/read",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"{{notification_id}}",
+								"read"
+							]
+						},
+						"description": "Mark a single notification as read"
+					}
+				},
+				{
+					"name": "Mark All Notifications as Read",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/notifications/read-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"read-all"
+							]
+						},
+						"description": "Mark all notifications as read for authenticated user"
+					}
+				},
+				{
+					"name": "Delete Notification",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/notifications/{{notification_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"{{notification_id}}"
+							]
+						},
+						"description": "Delete a specific notification"
+					}
+				},
+				{
+					"name": "Clear All Read Notifications",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/notifications/clear-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"clear-all"
+							]
+						},
+						"description": "Delete all read notifications (keeps unread notifications)"
+					}
+				},
+				{
+					"name": "Legacy - Update FCM Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fcmToken\": \"your_fcm_token_here\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/notifications/fcm-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"fcm-token"
+							]
+						},
+						"description": "Legacy endpoint for FCM token (use /push-token instead). Still works for backward compatibility."
+					}
+				}
+			]
 		}
 	],
 	"variable": [
@@ -862,6 +1155,11 @@
 			"key": "booking_flow_id",
 			"value": "",
 			"description": "Booking Flow ID for admin operations"
+		},
+		{
+			"key": "notification_id",
+			"value": "",
+			"description": "Notification ID for operations"
 		}
 	]
 }

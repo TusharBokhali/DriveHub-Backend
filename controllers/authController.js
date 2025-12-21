@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
+const { createAndSendNotification } = require('./notificationController');
 
 // Set default JWT secret if not provided
 const JWT_SECRET = process.env.JWT_SECRET || 'your_default_jwt_secret_key_here_make_it_long_and_random_12345';
@@ -142,6 +143,33 @@ exports.register = async (req,res) => {
     await user.save();
 
     const token = createToken(user);
+    
+    // Send welcome notification after successful registration
+    try {
+      const welcomeMessage = user.role === 'admin'
+        ? `Welcome to DriveHub, ${user.name}! Your admin account has been created successfully.`
+        : user.role === 'client'
+        ? `Welcome to DriveHub, ${user.name}! Start listing your vehicles and grow your business.`
+        : `Welcome to DriveHub, ${user.name}! Your account has been created. Explore our vehicles and book your ride.`;
+      
+      await createAndSendNotification(
+        user._id,
+        'system',
+        'Welcome to DriveHub! 🎉',
+        welcomeMessage,
+        {
+          action: 'user_registered',
+          registrationTime: new Date().toISOString(),
+          userRole: user.role
+        },
+        null
+      );
+      console.log(`✅ Welcome notification sent to new user ${user.email} (${user._id})`);
+    } catch (notifError) {
+      console.error(`❌ Error sending welcome notification to new user ${user.email}:`, notifError);
+      // Don't fail registration if notification fails
+    }
+    
     res.status(201).json({ 
       success: true, 
       data: { 
@@ -244,6 +272,33 @@ exports.login = async (req,res) => {
     }
 
     const token = createToken(user);
+    
+    // Send welcome notification after successful login
+    try {
+      const welcomeMessage = user.role === 'admin' 
+        ? `Welcome back, ${user.name}! You're logged in as Admin.`
+        : user.role === 'client'
+        ? `Welcome back, ${user.name}! Manage your vehicles and bookings.`
+        : `Welcome back, ${user.name}! Explore our vehicles and book your ride.`;
+      
+      await createAndSendNotification(
+        user._id,
+        'system',
+        'Welcome Back! 👋',
+        welcomeMessage,
+        {
+          action: 'user_login',
+          loginTime: new Date().toISOString(),
+          userRole: user.role
+        },
+        null
+      );
+      console.log(`✅ Welcome notification sent to user ${user.email} (${user._id})`);
+    } catch (notifError) {
+      console.error(`❌ Error sending welcome notification to user ${user.email}:`, notifError);
+      // Don't fail login if notification fails
+    }
+    
     res.json({ 
       success: true, 
       data: { 

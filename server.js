@@ -47,6 +47,9 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 // New Booking Flow routes
 app.use('/api/booking-flow', require('./routes/bookingFlow'));
 
+// Notifications routes
+app.use('/api/notifications', require('./routes/notifications'));
+
 // Admin routes
 app.use('/api/admin/vehicles', require('./routes/admin/vehicles'));
 
