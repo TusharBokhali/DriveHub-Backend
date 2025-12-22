@@ -217,9 +217,123 @@ exports.register = async (req,res) => {
 
 exports.login = async (req,res) => {
   try {
-    const { email, password } = req.body || {};
+    const { email, password, googleId, name, profileImage } = req.body || {};
     
-    // Check if email and password are provided
+    // Check if it's Google Sign-In (has googleId)
+    if (googleId && email) {
+      // Google Sign-In flow
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ 
+          success: false, 
+          data: null, 
+          message: 'Please provide a valid email address' 
+        });
+      }
+
+      // Check if user exists by email or googleId
+      let user = await User.findOne({
+        $or: [
+          { email: email },
+          { googleId: googleId }
+        ]
+      });
+
+      if (user) {
+        // User exists - update Google ID if not set
+        if (!user.googleId) {
+          user.googleId = googleId;
+          user.signInMethod = 'google';
+        }
+        // Update profile image if not set and provided
+        if (!user.profileImage && profileImage) {
+          user.profileImage = profileImage;
+        }
+        // Update name if provided and different
+        if (name && name !== user.name) {
+          user.name = name;
+        }
+        await user.save();
+      } else {
+        // New user - create account
+        user = new User({
+          name: name || 'User',
+          email: email,
+          googleId: googleId,
+          signInMethod: 'google',
+          role: 'user',
+          profileImage: profileImage || null,
+          preferredLanguage: 'hinglish'
+        });
+        await user.save();
+
+        // Send welcome notification for new user
+        try {
+          const welcomeMessage = `Welcome to DriveHub, ${user.name}! Your account has been created via Google Sign-In. Explore our vehicles and book your ride.`;
+          await createAndSendNotification(
+            user._id,
+            'system',
+            'Welcome to DriveHub! 🎉',
+            welcomeMessage,
+            {
+              action: 'google_signup',
+              registrationTime: new Date().toISOString(),
+              userRole: user.role
+            },
+            null
+          );
+        } catch (notifError) {
+          console.error('Error sending welcome notification:', notifError);
+        }
+      }
+
+      // Generate token for Google Sign-In user
+      const token = createToken(user);
+
+      // Send login notification
+      try {
+        const welcomeMessage = `Welcome back, ${user.name}! You're logged in via Google.`;
+        await createAndSendNotification(
+          user._id,
+          'system',
+          'Welcome Back! 👋',
+          welcomeMessage,
+          {
+            action: 'google_signin',
+            loginTime: new Date().toISOString(),
+            userRole: user.role
+          },
+          null
+        );
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError);
+      }
+
+      return res.json({ 
+        success: true, 
+        data: { 
+          token, 
+          user: { 
+            id: user._id, 
+            name: user.name || null, 
+            email: user.email || null, 
+            role: user.role || 'user',
+            phone: user.phone || null,
+            address: user.address || null,
+            profileImage: user.profileImage || null,
+            businessName: user.businessName || null,
+            businessAddress: user.businessAddress || null,
+            businessPhone: user.businessPhone || null,
+            preferredLanguage: user.preferredLanguage || 'hinglish',
+            signInMethod: user.signInMethod || 'google'
+          } 
+        }, 
+        message: 'Google Sign-In successful' 
+      });
+    }
+
+    // Normal email/password login flow
     if(!email || !password) return res.status(400).json({ 
       success: false, 
       data: null, 
@@ -252,6 +366,15 @@ exports.login = async (req,res) => {
       data: null, 
       message: 'No account found with this email address' 
     });
+
+    // Check if user has password (not Google-only account)
+    if (!user.password) {
+      return res.status(401).json({ 
+        success: false, 
+        data: null, 
+        message: 'This account uses Google Sign-In. Please sign in with Google.' 
+      });
+    }
 
     // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
