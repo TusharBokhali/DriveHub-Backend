@@ -3,6 +3,35 @@ const Vehicle = require('../models/Vehicle');
 const { createAndSendNotification } = require('./notificationController');
 
 /**
+ * Get color code for booking status
+ * @param {string} status - Booking status
+ * @returns {string} - Hex color code
+ */
+const getStatusColor = (status) => {
+  const statusColors = {
+    'pending': '#FFA500',      // Orange
+    'approved': '#4CAF50',      // Green
+    'rejected': '#F44336',     // Red
+    'ongoing': '#2196F3',      // Blue
+    'completed': '#28A745',    // Green (darker)
+    'cancelled': '#DC3545'     // Red (darker)
+  };
+  return statusColors[status] || '#6C757D'; // Default gray
+};
+
+/**
+ * Add status color to booking object
+ * @param {Object} booking - Booking object
+ * @returns {Object} - Booking object with statusColor
+ */
+const addStatusColor = (booking) => {
+  if (booking && booking.bookingStatus) {
+    booking.statusColor = getStatusColor(booking.bookingStatus);
+  }
+  return booking;
+};
+
+/**
  * POST /api/booking-flow/bookings
  * Create a new booking with user details and document images
  */
@@ -202,6 +231,9 @@ exports.createBooking = async (req, res) => {
     // Populate vehicle details for response
     await booking.populate('vehicleId', 'title category images price');
 
+    // Add status color
+    addStatusColor(booking);
+
     // SECURITY: Send notification ONLY to user who created booking
     const bookingOwnerId = booking.user._id || booking.user;
     const bookingOwnerEmail = req.user.email;
@@ -256,13 +288,19 @@ exports.getBookings = async (req, res) => {
     }
 
     const bookings = await BookingFlow.find(query)
-      .populate('user', 'name email phone')
+      .populate('user', 'name email phone profileImage')
       .populate('vehicleId', 'title category images price')
       .sort({ createdAt: -1 });
 
+    // Add status color to each booking
+    const bookingsWithColor = bookings.map(booking => {
+      const bookingObj = booking.toObject();
+      return addStatusColor(bookingObj);
+    });
+
     res.json({
       success: true,
-      data: bookings,
+      data: bookingsWithColor,
       message: `Found ${bookings.length} bookings`
     });
   } catch (err) {
@@ -282,7 +320,7 @@ exports.getBookings = async (req, res) => {
 exports.getBookingById = async (req, res) => {
   try {
     const booking = await BookingFlow.findById(req.params.id)
-      .populate('user', 'name email phone')
+      .populate('user', 'name email phone profileImage')
       .populate('vehicleId', 'title category images price owner');
 
     if (!booking) {
@@ -301,6 +339,9 @@ exports.getBookingById = async (req, res) => {
         message: 'Not authorized to view this booking'
       });
     }
+
+    // Add status color
+    addStatusColor(booking);
 
     res.json({
       success: true,
@@ -339,7 +380,7 @@ exports.approveBooking = async (req, res) => {
     }
     
     const booking = await BookingFlow.findById(req.params.id)
-      .populate('user', 'name email role');
+      .populate('user', 'name email role profileImage');
 
     if (!booking) {
       return res.status(404).json({
@@ -371,7 +412,7 @@ exports.approveBooking = async (req, res) => {
 
     await booking.save();
 
-    await booking.populate('user', 'name email phone');
+    await booking.populate('user', 'name email phone profileImage');
     await booking.populate('vehicleId', 'title category images price');
 
     // SECURITY: Send notification ONLY to booking owner (user who created booking)
@@ -394,6 +435,9 @@ exports.approveBooking = async (req, res) => {
       console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
       // Don't fail the request if notification fails
     }
+
+    // Add status color
+    addStatusColor(booking);
 
     res.json({
       success: true,
@@ -432,7 +476,7 @@ exports.rejectBooking = async (req, res) => {
     }
     
     const booking = await BookingFlow.findById(req.params.id)
-      .populate('user', 'name email role');
+      .populate('user', 'name email role profileImage');
 
     if (!booking) {
       return res.status(404).json({
@@ -464,7 +508,7 @@ exports.rejectBooking = async (req, res) => {
 
     await booking.save();
 
-    await booking.populate('user', 'name email phone');
+    await booking.populate('user', 'name email phone profileImage');
     await booking.populate('vehicleId', 'title category images price');
 
     // SECURITY: Send notification ONLY to booking owner (user who created booking)
@@ -488,6 +532,9 @@ exports.rejectBooking = async (req, res) => {
     } catch (notifError) {
       console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
     }
+
+    // Add status color
+    addStatusColor(booking);
 
     res.json({
       success: true,
@@ -526,7 +573,7 @@ exports.startBooking = async (req, res) => {
     }
     
     const booking = await BookingFlow.findById(req.params.id)
-      .populate('user', 'name email role');
+      .populate('user', 'name email role profileImage');
 
     if (!booking) {
       return res.status(404).json({
@@ -558,7 +605,7 @@ exports.startBooking = async (req, res) => {
 
     await booking.save();
 
-    await booking.populate('user', 'name email phone');
+    await booking.populate('user', 'name email phone profileImage');
     await booking.populate('vehicleId', 'title category images price');
 
     // SECURITY: Send notification ONLY to booking owner (user who created booking)
@@ -580,6 +627,9 @@ exports.startBooking = async (req, res) => {
     } catch (notifError) {
       console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
     }
+
+    // Add status color
+    addStatusColor(booking);
 
     res.json({
       success: true,
@@ -618,7 +668,7 @@ exports.completeBooking = async (req, res) => {
     }
     
     const booking = await BookingFlow.findById(req.params.id)
-      .populate('user', 'name email role');
+      .populate('user', 'name email role profileImage');
 
     if (!booking) {
       return res.status(404).json({
@@ -686,7 +736,7 @@ exports.completeBooking = async (req, res) => {
 
     await booking.save();
 
-    await booking.populate('user', 'name email phone');
+    await booking.populate('user', 'name email phone profileImage');
     await booking.populate('vehicleId', 'title category images price');
 
     // SECURITY: Send notification ONLY to booking owner (user who created booking)
@@ -710,6 +760,9 @@ exports.completeBooking = async (req, res) => {
       console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
     }
 
+    // Add status color
+    addStatusColor(booking);
+
     res.json({
       success: true,
       data: booking,
@@ -721,6 +774,132 @@ exports.completeBooking = async (req, res) => {
       success: false,
       data: null,
       message: 'Server error while completing booking'
+    });
+  }
+};
+
+/**
+ * POST /api/booking-flow/bookings/:id/cancel
+ * User API to cancel their own booking
+ * SECURITY: Only booking owner can cancel their own booking (admin can also cancel)
+ */
+exports.cancelBooking = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const userEmail = req.user.email;
+    const userRole = req.user.role;
+    const bookingId = req.params.id;
+    const { cancellationReason } = req.body;
+
+    console.log(`📝 User ${userEmail} (${userId}) attempting to cancel booking ${bookingId}`);
+
+    // Find the booking
+    const booking = await BookingFlow.findById(bookingId)
+      .populate('user', 'name email role profileImage')
+      .populate('vehicleId', 'title category images price');
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        data: null,
+        message: 'Booking not found'
+      });
+    }
+
+    // SECURITY: Check authorization - only booking owner or admin can cancel
+    const bookingOwnerId = booking.user._id || booking.user;
+    const isOwner = bookingOwnerId.toString() === userId.toString();
+    const isAdmin = userRole === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      console.error(`Security: User ${userEmail} (${userId}) attempted to cancel booking ${bookingId} owned by ${bookingOwnerId}`);
+      return res.status(403).json({
+        success: false,
+        data: null,
+        message: 'Forbidden: You can only cancel your own bookings'
+      });
+    }
+
+    // Check if booking can be cancelled
+    // Cannot cancel if already completed or already cancelled
+    if (booking.bookingStatus === 'completed') {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: 'Cannot cancel a completed booking'
+      });
+    }
+
+    if (booking.bookingStatus === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: 'Booking is already cancelled'
+      });
+    }
+
+    // Cannot cancel if trip is ongoing (admin should handle this)
+    if (booking.bookingStatus === 'ongoing') {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: 'Cannot cancel an ongoing trip. Please contact support.'
+      });
+    }
+
+    // Update booking status
+    booking.bookingStatus = 'cancelled';
+    booking.cancelledAt = new Date();
+    if (cancellationReason) {
+      booking.cancellationReason = cancellationReason;
+    }
+
+    await booking.save();
+
+    await booking.populate('user', 'name email phone profileImage');
+    await booking.populate('vehicleId', 'title category images price');
+
+    // Send notification to booking owner
+    const bookingOwnerIdForNotif = booking.user._id || booking.user;
+    const bookingOwnerEmail = booking.user.email || 'Unknown';
+    
+    try {
+      await createAndSendNotification(
+        bookingOwnerIdForNotif,
+        'booking',
+        'Booking Cancelled',
+        `Your booking for ${booking.vehicleId?.title || 'vehicle'} has been cancelled.${cancellationReason ? ` Reason: ${cancellationReason}` : ''}`,
+        {
+          action: 'booking_cancelled',
+          status: 'cancelled',
+          vehicleTitle: booking.vehicleId?.title,
+          cancelledBy: isAdmin ? userEmail : 'You',
+          cancellationReason: cancellationReason || null
+        },
+        booking._id
+      );
+      console.log(`✅ Notification sent to booking owner: ${bookingOwnerEmail} (${bookingOwnerIdForNotif})`);
+    } catch (notifError) {
+      console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
+      // Don't fail the request if notification fails
+    }
+
+    console.log(`✅ Booking ${bookingId} cancelled successfully by ${isAdmin ? 'admin' : 'user'} ${userEmail}`);
+
+    // Add status color
+    addStatusColor(booking);
+
+    res.json({
+      success: true,
+      data: booking,
+      message: 'Booking cancelled successfully'
+    });
+  } catch (err) {
+    console.error('Cancel booking error:', err);
+    res.status(500).json({
+      success: false,
+      data: null,
+      message: 'Server error while cancelling booking'
     });
   }
 };

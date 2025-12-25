@@ -11,7 +11,8 @@ const {
   approveBooking,
   rejectBooking,
   startBooking,
-  completeBooking
+  completeBooking,
+  cancelBooking
 } = require('../controllers/bookingFlowController');
 
 // Middleware to check admin role
@@ -76,6 +77,9 @@ router.get('/bookings', protect, getBookings);
 
 // User routes - Get booking by ID
 router.get('/bookings/:id', protect, getBookingById);
+
+// User routes - Cancel own booking
+router.post('/bookings/:id/cancel', protect, cancelBooking);
 
 // Admin routes - Approve booking
 router.post('/bookings/:id/approve', protect, requireAdmin, approveBooking);

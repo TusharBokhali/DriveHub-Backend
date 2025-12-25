@@ -92,11 +92,37 @@ exports.validateLogin = [
     .isEmail()
     .withMessage('Please provide a valid email address')
     .normalizeEmail(),
+  // Password is optional for Google Sign-In (when googleId is provided)
   body('password')
-    .notEmpty()
-    .withMessage('Password is required')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long'),
+    .optional()
+    .custom((value, { req }) => {
+      // If googleId is provided, password is not required
+      if (req.body.googleId) {
+        return true;
+      }
+      // For normal login, password is required
+      if (!value || value.trim() === '') {
+        throw new Error('Password is required');
+      }
+      if (value.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+      }
+      return true;
+    }),
+  // Google Sign-In fields (optional)
+  body('googleId')
+    .optional()
+    .isString()
+    .withMessage('googleId must be a string'),
+  body('name')
+    .optional()
+    .isString()
+    .withMessage('Name must be a string')
+    .trim(),
+  body('profileImage')
+    .optional()
+    .isString()
+    .withMessage('profileImage must be a string'),
   exports.validateRequest
 ];
 

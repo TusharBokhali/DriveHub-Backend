@@ -22,11 +22,15 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Request logging middleware (for debugging) - must be before routes
 app.use((req, res, next) => {
-  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE') {
     console.log(`\n📥 ${new Date().toISOString()} - ${req.method} ${req.path}`);
     console.log('Body keys:', Object.keys(req.body || {}));
     if (req.files) {
       console.log('Files:', req.files.length);
+    }
+    // Log all registered routes for debugging
+    if (req.path.includes('cancel')) {
+      console.log('🔍 Cancel route check - Path:', req.path, 'Method:', req.method);
     }
   }
   next();

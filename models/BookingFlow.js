@@ -30,7 +30,7 @@ const bookingFlowSchema = new mongoose.Schema({
   // Booking status
   bookingStatus: { 
     type: String, 
-    enum: ['pending', 'approved', 'rejected', 'ongoing', 'completed'], 
+    enum: ['pending', 'approved', 'rejected', 'ongoing', 'completed', 'cancelled'], 
     default: 'pending' 
   },
   
@@ -56,7 +56,9 @@ const bookingFlowSchema = new mongoose.Schema({
   rejectedAt: Date,
   startedAt: Date,
   completedAt: Date,
-  paidAt: Date
+  paidAt: Date,
+  cancelledAt: Date,
+  cancellationReason: { type: String } // Optional reason for cancellation
 });
 
 // Update the updatedAt field before saving
