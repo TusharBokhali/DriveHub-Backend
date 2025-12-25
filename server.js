@@ -7,9 +7,30 @@ const fs = require('fs');
 
 connectDB();
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+
+// CORS configuration - must be before other middleware
+app.use(cors({
+  origin: '*', // Allow all origins (for development)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: true
+}));
+
+// Body parsers - but don't parse multipart/form-data (let multer handle it)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Request logging middleware (for debugging) - must be before routes
+app.use((req, res, next) => {
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+    console.log(`\n📥 ${new Date().toISOString()} - ${req.method} ${req.path}`);
+    console.log('Body keys:', Object.keys(req.body || {}));
+    if (req.files) {
+      console.log('Files:', req.files.length);
+    }
+  }
+  next();
+});
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -61,15 +82,41 @@ app.listen(PORT, ()=> console.log(`Server running on ${PORT}`));
 // Global error handler (including Multer errors) to avoid connection resets
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
+  console.error('Error occurred:', err);
+  
   if (err && err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({ success: false, data: null, message: 'File too large' });
+    return res.status(400).json({ 
+      success: false, 
+      data: null, 
+      message: 'File too large. Maximum size is 10MB per file.' 
+    });
   }
+  
   if (err && err.name === 'MulterError') {
-    return res.status(400).json({ success: false, data: null, message: `Upload error: ${err.message}` });
+    return res.status(400).json({ 
+      success: false, 
+      data: null, 
+      message: `Upload error: ${err.message}` 
+    });
   }
+  
+  if (err && err.type === 'entity.parse.failed') {
+    return res.status(400).json({ 
+      success: false, 
+      data: null, 
+      message: 'Invalid JSON in request body' 
+    });
+  }
+  
   if (err) {
     console.error('Unhandled error:', err);
-    return res.status(500).json({ success: false, data: null, message: 'Internal server error' });
+    return res.status(500).json({ 
+      success: false, 
+      data: null, 
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
+  
   return next();
 });

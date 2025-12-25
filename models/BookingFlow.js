@@ -10,6 +10,16 @@ const bookingFlowSchema = new mongoose.Schema({
   // Vehicle selection
   vehicleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle', required: true },
   
+  // Booking dates
+  startDate: { type: Date, required: true },
+  endDate: { type: Date, required: true },
+  
+  // Driver information
+  driverIncluded: { type: Boolean, default: false },
+  
+  // Price type (object)
+  priceType: { type: mongoose.Schema.Types.Mixed },
+  
   // Payment method
   paymentMethod: { 
     type: String, 

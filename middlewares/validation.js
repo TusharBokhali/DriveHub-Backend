@@ -140,6 +140,58 @@ exports.validateBookingFlow = [
     .withMessage('Vehicle ID is required')
     .isMongoId()
     .withMessage('Valid vehicle ID is required'),
+  body('startDate')
+    .notEmpty()
+    .withMessage('Start date is required')
+    .isISO8601()
+    .withMessage('Start date must be a valid ISO 8601 date'),
+  body('endDate')
+    .notEmpty()
+    .withMessage('End date is required')
+    .isISO8601()
+    .withMessage('End date must be a valid ISO 8601 date')
+    .custom((value, { req }) => {
+      if (req.body.startDate && new Date(value) <= new Date(req.body.startDate)) {
+        throw new Error('End date must be after start date');
+      }
+      return true;
+    }),
+  body('driverIncluded')
+    .optional()
+    .custom((value) => {
+      // Accept boolean or string "true"/"false" (FormData sends strings)
+      if (typeof value === 'boolean') return true;
+      if (typeof value === 'string' && (value.toLowerCase() === 'true' || value.toLowerCase() === 'false')) return true;
+      throw new Error('driverIncluded must be a boolean (true or false)');
+    }),
+  body('priceType')
+    .optional()
+    .custom((value) => {
+      // Accept object or JSON string (FormData sends strings)
+      if (value === null || value === '' || value === undefined) return true;
+      
+      // Case 1: Already an object (from JSON request)
+      if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+        return true;
+      }
+      
+      // Case 2: JSON string (from FormData)
+      if (typeof value === 'string') {
+        try {
+          const parsed = JSON.parse(value);
+          // Must be an object, not array, not null, not primitive
+          if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+            return true;
+          }
+        } catch (e) {
+          // JSON parse failed - invalid JSON string
+          throw new Error(`priceType must be a valid JSON object string. Parse error: ${e.message}`);
+        }
+      }
+      
+      // Invalid type
+      throw new Error(`priceType must be an object or valid JSON object string. Received: ${typeof value}${Array.isArray(value) ? ' (array)' : ''}`);
+    }),
   body('paymentMethod')
     .notEmpty()
     .withMessage('Payment method is required')
@@ -150,6 +202,13 @@ exports.validateBookingFlow = [
     .isString()
     .withMessage('Description must be a string')
     .trim(),
+  // Custom validation to handle FormData properly
+  (req, res, next) => {
+    // Log for debugging
+    console.log('🔍 Validation - Request body keys:', Object.keys(req.body || {}));
+    console.log('🔍 Validation - Files:', req.files ? req.files.length : 0);
+    next();
+  },
   exports.validateRequest
 ];
 

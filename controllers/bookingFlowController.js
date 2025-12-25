@@ -8,14 +8,28 @@ const { createAndSendNotification } = require('./notificationController');
  */
 exports.createBooking = async (req, res) => {
   try {
-    const { phone, email, description, vehicleId, paymentMethod } = req.body;
+    // Debug logging
+    console.log('📥 Booking Request Received:');
+    console.log('Body:', JSON.stringify(req.body, null, 2));
+    console.log('Files count:', req.files ? req.files.length : 0);
+    console.log('Files:', req.files ? req.files.map(f => ({ fieldname: f.fieldname, originalname: f.originalname })) : []);
+
+    const { phone, email, description, vehicleId, paymentMethod, startDate, endDate, driverIncluded, priceType } = req.body;
 
     // Validation
-    if (!phone || !email || !vehicleId || !paymentMethod) {
+    if (!phone || !email || !vehicleId || !paymentMethod || !startDate || !endDate) {
+      console.log('❌ Missing required fields:', {
+        phone: !!phone,
+        email: !!email,
+        vehicleId: !!vehicleId,
+        paymentMethod: !!paymentMethod,
+        startDate: !!startDate,
+        endDate: !!endDate
+      });
       return res.status(400).json({
         success: false,
         data: null,
-        message: 'Missing required fields: phone, email, vehicleId, paymentMethod'
+        message: 'Missing required fields: phone, email, vehicleId, paymentMethod, startDate, endDate'
       });
     }
 
@@ -37,6 +51,93 @@ exports.createBooking = async (req, res) => {
       });
     }
 
+    // Validate dates
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (isNaN(start.getTime())) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: 'Invalid startDate format'
+      });
+    }
+    
+    if (isNaN(end.getTime())) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: 'Invalid endDate format'
+      });
+    }
+    
+    if (start >= end) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: 'endDate must be after startDate'
+      });
+    }
+
+    // Handle driverIncluded - FormData sends strings, so convert "true"/"false" to boolean
+    let driverIncludedBool = false;
+    if (driverIncluded !== undefined) {
+      if (typeof driverIncluded === 'boolean') {
+        driverIncludedBool = driverIncluded;
+      } else if (typeof driverIncluded === 'string') {
+        driverIncludedBool = driverIncluded.toLowerCase() === 'true';
+      } else {
+        return res.status(400).json({
+          success: false,
+          data: null,
+          message: 'driverIncluded must be a boolean (true or false)'
+        });
+      }
+    }
+
+    // Handle priceType - Can be JSON string (FormData) or object (JSON request)
+    let priceTypeObj = null;
+    if (priceType !== undefined && priceType !== null && priceType !== '') {
+      if (typeof priceType === 'string') {
+        // Case 1: JSON string from FormData
+        try {
+          const parsed = JSON.parse(priceType);
+          // Validate it's an object (not array, not null, not primitive)
+          if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+            priceTypeObj = parsed;
+          } else {
+            return res.status(400).json({
+              success: false,
+              data: null,
+              message: 'priceType must be a valid JSON object (not array or primitive)'
+            });
+          }
+        } catch (e) {
+          // If JSON.parse fails, it might be a plain string - check if it's a valid JSON string
+          console.error('priceType JSON parse error:', e.message);
+          return res.status(400).json({
+            success: false,
+            data: null,
+            message: 'priceType must be a valid JSON object string. Error: ' + e.message
+          });
+        }
+      } else if (typeof priceType === 'object' && priceType !== null && !Array.isArray(priceType)) {
+        // Case 2: Already an object from JSON request
+        priceTypeObj = priceType;
+      } else {
+        // Invalid type
+        return res.status(400).json({
+          success: false,
+          data: null,
+          message: `priceType must be an object. Received type: ${typeof priceType}${Array.isArray(priceType) ? ' (array)' : ''}`
+        });
+      }
+      
+      console.log('✅ priceType processed:', JSON.stringify(priceTypeObj, null, 2));
+    } else {
+      console.log('ℹ️ priceType not provided (optional field)');
+    }
+
     // Check if vehicle exists
     const vehicle = await Vehicle.findById(vehicleId);
     if (!vehicle) {
@@ -48,6 +149,7 @@ exports.createBooking = async (req, res) => {
     }
 
     // Handle document images (from multipart/form-data)
+    // Documents are optional - can be 0 to 5
     const documentImages = [];
     if (req.files && req.files.length > 0) {
       // req.files is an array from multer
@@ -55,15 +157,19 @@ exports.createBooking = async (req, res) => {
         // If using Cloudinary, file.path or file.secure_url will be the URL
         // If using local storage, file.path will be the relative path
         const imageUrl = file.secure_url || file.path || file.url || `/uploads/${file.filename}`;
-        documentImages.push(imageUrl);
+        if (imageUrl) {
+          documentImages.push(imageUrl);
+        }
       });
     } else if (req.file) {
       // Handle single file upload (fallback)
       const imageUrl = req.file.secure_url || req.file.path || req.file.url || `/uploads/${req.file.filename}`;
-      documentImages.push(imageUrl);
+      if (imageUrl) {
+        documentImages.push(imageUrl);
+      }
     }
 
-    // Limit to 5 images
+    // Documents are optional, but if provided, max 5
     if (documentImages.length > 5) {
       return res.status(400).json({
         success: false,
@@ -72,6 +178,8 @@ exports.createBooking = async (req, res) => {
       });
     }
 
+    console.log(`📎 Documents processed: ${documentImages.length} out of ${req.files ? req.files.length : 0} uploaded`);
+
     // Create booking
     const booking = new BookingFlow({
       user: req.user._id,
@@ -79,6 +187,10 @@ exports.createBooking = async (req, res) => {
       email,
       description,
       vehicleId,
+      startDate: start,
+      endDate: end,
+      driverIncluded: driverIncludedBool,
+      priceType: priceTypeObj,
       paymentMethod,
       bookingStatus: 'pending',
       paymentStatus: 'unpaid',
