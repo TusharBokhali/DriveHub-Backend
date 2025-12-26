@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { sendNotification, sendMulticastNotification, isInitialized: isFCMInitialized } = require('../utils/fcmService');
@@ -115,16 +116,29 @@ exports.createAndSendNotification = async (userId, type, title, message, data = 
 exports.getNotifications = async (req, res) => {
   try {
     const { page = 1, limit = 20, unreadOnly = false } = req.query;
-    const userId = req.user._id;
+    
+    // Validate user is authenticated
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        data: null,
+        message: 'User not authenticated'
+      });
+    }
+
+    // Convert userId to ObjectId to ensure proper comparison
+    const userId = new mongoose.Types.ObjectId(req.user._id);
     
     // Build query
     let query = { user: userId };
-    if (unreadOnly === 'true') {
+    if (unreadOnly === 'true' || unreadOnly === true) {
       query.isRead = false;
     }
     
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    console.log(`📬 Fetching notifications for user ${userId.toString()}, unreadOnly: ${unreadOnly}, query:`, JSON.stringify(query));
     
     // Get notifications
     const notifications = await Notification.find(query)
@@ -141,6 +155,8 @@ exports.getNotifications = async (req, res) => {
     
     // Get total count
     const totalCount = await Notification.countDocuments({ user: userId });
+    
+    console.log(`📊 Found ${notifications.length} notifications (Total: ${totalCount}, Unread: ${unreadCount})`);
     
     res.json({
       success: true,
@@ -159,6 +175,7 @@ exports.getNotifications = async (req, res) => {
     });
   } catch (err) {
     console.error('Get notifications error:', err);
+    console.error('Error stack:', err.stack);
     res.status(500).json({
       success: false,
       data: null,
@@ -332,30 +349,94 @@ exports.deleteNotification = async (req, res) => {
 
 /**
  * DELETE /api/notifications/clear-all
- * Delete all read notifications
+ * Delete all notifications (both read and unread) for the user
  */
 exports.clearAllRead = async (req, res) => {
   try {
-    const userId = req.user._id;
+    // Validate user is authenticated
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        data: null,
+        message: 'User not authenticated'
+      });
+    }
+
+    // Convert userId to ObjectId to ensure proper comparison
+    const userId = new mongoose.Types.ObjectId(req.user._id);
     
-    const result = await Notification.deleteMany({
+    // Validate userId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: 'Invalid user ID'
+      });
+    }
+
+    console.log(`🗑️ Starting clear all notifications for user ${userId.toString()}`);
+
+    // Check how many notifications exist before deletion
+    const totalCountBefore = await Notification.countDocuments({
+      user: userId
+    });
+
+    const readCountBefore = await Notification.countDocuments({
       user: userId,
       isRead: true
     });
-    
+
+    const unreadCountBefore = await Notification.countDocuments({
+      user: userId,
+      isRead: false
+    });
+
+    console.log(`📊 Before deletion - Total: ${totalCountBefore}, Read: ${readCountBefore}, Unread: ${unreadCountBefore}`);
+
+    // Delete ALL notifications (both read and unread) for the user
+    // Using deleteMany with proper ObjectId
+    const result = await Notification.deleteMany({
+      user: userId
+    });
+
+    // Verify deletion immediately after
+    const totalCountAfter = await Notification.countDocuments({
+      user: userId
+    });
+
+    const unreadCountAfter = await Notification.countDocuments({
+      user: userId,
+      isRead: false
+    });
+
+    console.log(`✅ After deletion - Deleted: ${result.deletedCount || 0}, Remaining Total: ${totalCountAfter}, Remaining Unread: ${unreadCountAfter}`);
+
+    // Double check - if there are still notifications, log them for debugging
+    if (totalCountAfter > 0) {
+      const remainingNotifications = await Notification.find({ user: userId }).select('_id isRead createdAt').limit(5);
+      console.warn(`⚠️ WARNING: ${totalCountAfter} notifications still exist after deletion!`);
+      console.warn(`Sample remaining notifications:`, remainingNotifications);
+    }
+
     res.json({
       success: true,
       data: {
-        deletedCount: result.deletedCount
+        deletedCount: result.deletedCount || 0,
+        deletedRead: readCountBefore,
+        deletedUnread: unreadCountBefore,
+        remainingTotal: totalCountAfter,
+        remainingUnread: unreadCountAfter
       },
-      message: `Deleted ${result.deletedCount} read notifications`
+      message: `Deleted ${result.deletedCount || 0} notifications (${readCountBefore} read, ${unreadCountBefore} unread). Remaining: ${totalCountAfter} total, ${unreadCountAfter} unread.`
     });
   } catch (err) {
-    console.error('Clear all read error:', err);
+    console.error('Clear all notifications error:', err);
+    console.error('Error stack:', err.stack);
     res.status(500).json({
       success: false,
       data: null,
-      message: 'Server error while deleting notifications'
+      message: 'Server error while deleting notifications',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
 };

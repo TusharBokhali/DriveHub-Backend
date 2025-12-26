@@ -277,24 +277,40 @@ exports.createBooking = async (req, res) => {
 /**
  * GET /api/booking-flow/bookings
  * Get all bookings (admin) or user's own bookings
+ * Query params:
+ *   - type: 'all_past' to get all completed bookings of all types (sell, rent, service)
  */
 exports.getBookings = async (req, res) => {
   try {
     let query = {};
+    const { type } = req.query;
     
     // If user is not admin, only show their own bookings
     if (req.user.role !== 'admin') {
       query.user = req.user._id;
     }
 
+    // If type is 'all_past', filter for completed bookings only
+    if (type === 'all_past') {
+      query.bookingStatus = 'completed';
+    }
+
     const bookings = await BookingFlow.find(query)
       .populate('user', 'name email phone profileImage')
-      .populate('vehicleId', 'title category images price')
+      .populate('vehicleId', 'title category images price vehicleType')
       .sort({ createdAt: -1 });
 
-    // Add status color to each booking
+    // Add status color and label to each booking
     const bookingsWithColor = bookings.map(booking => {
       const bookingObj = booking.toObject();
+      
+      // Add label based on vehicle type (only when type is 'all_past')
+      if (type === 'all_past' && bookingObj.vehicleId && bookingObj.vehicleId.vehicleType) {
+        const vehicleType = bookingObj.vehicleId.vehicleType;
+        // Capitalize first letter for label
+        bookingObj.label = vehicleType.charAt(0).toUpperCase() + vehicleType.slice(1);
+      }
+      
       return addStatusColor(bookingObj);
     });
 

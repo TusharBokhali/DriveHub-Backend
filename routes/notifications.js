@@ -30,8 +30,9 @@ router.get('/', getNotifications);
 router.get('/:id', getNotificationById);
 router.put('/:id/read', markAsRead);
 router.put('/read-all', markAllAsRead);
-router.delete('/:id', deleteNotification);
+// IMPORTANT: Specific routes must come before parameterized routes
 router.delete('/clear-all', clearAllRead);
+router.delete('/:id', deleteNotification);
 
 module.exports = router;
 
