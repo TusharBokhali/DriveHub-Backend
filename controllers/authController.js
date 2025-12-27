@@ -217,7 +217,7 @@ exports.register = async (req,res) => {
 
 exports.login = async (req,res) => {
   try {
-    const { email, password, googleId, name, profileImage } = req.body || {};
+    const { email, password, googleId, name, profileImage, role } = req.body || {};
     
     // Check if it's Google Sign-In (has googleId)
     if (googleId && email) {
@@ -340,6 +340,24 @@ exports.login = async (req,res) => {
       message: 'Email and password are required' 
     });
 
+    // Role is required for normal login
+    if (!role) {
+      return res.status(400).json({ 
+        success: false, 
+        data: null, 
+        message: 'Role is required for login' 
+      });
+    }
+
+    // Validate role value
+    if (!['user', 'client', 'admin'].includes(role)) {
+      return res.status(400).json({ 
+        success: false, 
+        data: null, 
+        message: 'Role must be either "user", "client", or "admin"' 
+      });
+    }
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -373,6 +391,15 @@ exports.login = async (req,res) => {
         success: false, 
         data: null, 
         message: 'This account uses Google Sign-In. Please sign in with Google.' 
+      });
+    }
+
+    // Verify role matches - CRITICAL: Role from request must match user's actual role
+    if (user.role !== role) {
+      return res.status(403).json({ 
+        success: false, 
+        data: null, 
+        message: `Access denied. This account is registered as ${user.role}, but you are trying to login as ${role}. Please use the correct login method for your account type.` 
       });
     }
 

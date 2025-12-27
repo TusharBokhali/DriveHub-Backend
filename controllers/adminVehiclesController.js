@@ -105,9 +105,10 @@ exports.getVehicleById = async (req, res) => {
 // POST /api/admin/vehicles
 
 // ⚠️ Helper function to map frontend labels to backend enum values
+// Case-insensitive: Accepts any case (Petrol, PETROL, petrol) and normalizes
 const mapFuelType = (value) => {
   if (!value) return 'petrol';
-  const normalized = value.toLowerCase().trim();
+  const normalized = String(value).toLowerCase().trim();
   const mapping = {
     'petrol': 'petrol',
     'diesel': 'diesel',
@@ -115,19 +116,24 @@ const mapFuelType = (value) => {
     'electric': 'electric',
     'hybrid': 'hybrid',
     'lpg': 'cng', // Map LPG to CNG (similar fuel type)
+    'gasoline': 'petrol', // Map gasoline to petrol
+    'gas': 'petrol', // Map gas to petrol
   };
   return mapping[normalized] || 'petrol';
 };
 
+// Case-insensitive: Accepts any case (Manual, MANUAL, manual) and normalizes
 const mapTransmission = (value) => {
   if (!value) return 'manual';
-  const normalized = value.toLowerCase().trim();
+  const normalized = String(value).toLowerCase().trim();
   const mapping = {
     'manual': 'manual',
     'automatic': 'automatic',
+    'auto': 'automatic', // Short form
     'semi-auto': 'semi-automatic',
     'semi-automatic': 'semi-automatic',
     'semiautomatic': 'semi-automatic',
+    'semi auto': 'semi-automatic',
     'cvt': 'automatic', // CVT is a type of automatic transmission
   };
   return mapping[normalized] || 'manual';
@@ -185,20 +191,52 @@ exports.createVehicle = async (req, res) => {
           size: file.size,
           fieldname: file.fieldname,
           path: file.path,
+          secure_url: file.secure_url,
+          url: file.url,
         });
         
+        // Handle Cloudinary uploads - prioritize secure_url, then check path for Cloudinary URLs
+        let imageUrl = null;
+        
+        // First priority: secure_url (HTTPS from Cloudinary)
+        if (file.secure_url) {
+          imageUrl = file.secure_url;
+        } 
+        // Second priority: url property
+        else if (file.url) {
+          // Ensure HTTPS for Cloudinary URLs
+          imageUrl = file.url.startsWith('http://') ? file.url.replace('http://', 'https://') : file.url;
+        } 
+        // Third priority: path property - check if it's a Cloudinary URL
+        else if (file.path) {
+          // Check if path is a Cloudinary URL (starts with https://res.cloudinary.com)
+          if (file.path.startsWith('https://res.cloudinary.com') || file.path.startsWith('http://res.cloudinary.com')) {
+            // Ensure HTTPS for Cloudinary URLs
+            imageUrl = file.path.startsWith('https://') ? file.path : file.path.replace('http://', 'https://');
+          } 
+          // Local disk storage path
+          else {
+            imageUrl = file.path.startsWith('/') ? file.path : `/uploads/${file.filename}`;
+          }
+        } 
+        // Fallback: construct local path
+        else {
+          imageUrl = `/uploads/${file.filename}`;
+        }
+        
         return {
-          url: file.path || `/uploads/${file.filename}`,
-          filename: file.filename,
-          originalName: file.originalname,
-          mimetype: file.mimetype,
-          size: file.size
+          url: imageUrl,
+          filename: file.filename || file.public_id || `image_${index}`,
+          originalName: file.originalname || 'image',
+          mimetype: file.mimetype || 'image/jpeg',
+          size: file.size || 0
         };
       });
     } else {
       console.log('⚠️ No image files received in req.files');
-      console.log('Request body keys:', Object.keys(req.body));
+      console.log('Request body keys:', Object.keys(req.body || {}));
       console.log('Request files:', req.files);
+      // Images are optional, so this is fine - continue without images
     }
     
     // Parse and format features
@@ -327,13 +365,17 @@ exports.createVehicle = async (req, res) => {
       });
     }
     
+    // Category validation - case-insensitive
     const validCategories = ['bike', 'car', 'auto', 'other'];
-    if (category && !validCategories.includes(category.toLowerCase())) {
-      return res.status(400).json({
-        success: false,
-        data: null,
-        message: `Invalid category. Must be one of: ${validCategories.join(', ')}`
-      });
+    if (category) {
+      const normalizedCategory = String(category).toLowerCase().trim();
+      if (!validCategories.includes(normalizedCategory)) {
+        return res.status(400).json({
+          success: false,
+          data: null,
+          message: `Invalid category. Must be one of: ${validCategories.join(', ')}`
+        });
+      }
     }
     
     const validRentTypes = ['hourly', 'daily', 'per_km', 'fixed'];
@@ -370,9 +412,9 @@ exports.createVehicle = async (req, res) => {
       });
     }
     
-    // Normalize enum values - map frontend labels to backend enum values
-    const normalizedCategory = category ? category.toLowerCase() : 'other';
-    const normalizedVehicleType = vehicleType.toLowerCase();
+    // Normalize enum values - map frontend labels to backend enum values (case-insensitive)
+    const normalizedCategory = category ? String(category).toLowerCase().trim() : 'other';
+    const normalizedVehicleType = String(vehicleType).toLowerCase().trim();
     const normalizedRentType = rentType ? mapRentType(rentType) : undefined;
     const normalizedTransmission = mapTransmission(transmission);
     const normalizedFuelType = mapFuelType(fuelType);

@@ -1,5 +1,6 @@
 const BookingFlow = require('../models/BookingFlow');
 const Vehicle = require('../models/Vehicle');
+const User = require('../models/User');
 const { createAndSendNotification } = require('./notificationController');
 
 /**
@@ -29,6 +30,49 @@ const addStatusColor = (booking) => {
     booking.statusColor = getStatusColor(booking.bookingStatus);
   }
   return booking;
+};
+
+/**
+ * Send notification to all admin users
+ * @param {string} type - Notification type
+ * @param {string} title - Notification title
+ * @param {string} message - Notification message
+ * @param {object} data - Additional data
+ * @param {string} bookingId - Related booking ID (optional)
+ */
+const notifyAllAdmins = async (type, title, message, data = {}, bookingId = null) => {
+  try {
+    // Find all admin users
+    const admins = await User.find({ role: 'admin' }).select('_id email name');
+    
+    if (admins.length === 0) {
+      console.log('⚠️ No admin users found to notify');
+      return;
+    }
+
+    console.log(`📧 Sending notification to ${admins.length} admin(s)`);
+
+    // Send notification to each admin
+    const notificationPromises = admins.map(admin => 
+      createAndSendNotification(
+        admin._id,
+        type,
+        title,
+        message,
+        data,
+        bookingId
+      ).catch(err => {
+        console.error(`❌ Error sending notification to admin ${admin.email}:`, err);
+        return null; // Don't fail other notifications
+      })
+    );
+
+    await Promise.all(notificationPromises);
+    console.log(`✅ Notifications sent to all ${admins.length} admin(s)`);
+  } catch (error) {
+    console.error('❌ Error in notifyAllAdmins:', error);
+    // Don't throw error, just log it
+  }
 };
 
 /**
@@ -234,29 +278,53 @@ exports.createBooking = async (req, res) => {
     // Add status color
     addStatusColor(booking);
 
-    // SECURITY: Send notification ONLY to user who created booking
+    // Send notification to user who created booking
     const bookingOwnerId = booking.user._id || booking.user;
     const bookingOwnerEmail = req.user.email;
+    const bookingOwnerName = req.user.name || 'User';
     
     console.log(`📝 Booking created by user ${bookingOwnerEmail} (${bookingOwnerId}), Booking ID: ${booking._id}`);
     
+    // Notify user
     try {
       await createAndSendNotification(
-        bookingOwnerId, // Only booking creator gets notification
+        bookingOwnerId,
         'booking',
         'Booking Created',
         'Your booking has been created and is pending admin approval.',
         {
           action: 'booking_created',
           status: 'pending',
-          bookingId: booking._id.toString()
+          bookingId: booking._id.toString(),
+          vehicleTitle: booking.vehicleId?.title || 'Vehicle'
         },
         booking._id
       );
       console.log(`✅ Notification sent to booking creator: ${bookingOwnerEmail} (${bookingOwnerId})`);
     } catch (notifError) {
       console.error(`❌ Error sending notification to booking creator ${bookingOwnerEmail}:`, notifError);
-      // Don't fail the request if notification fails
+    }
+
+    // Notify all admins about new booking
+    try {
+      await notifyAllAdmins(
+        'booking',
+        'New Booking Request',
+        `${bookingOwnerName} has created a new booking for ${booking.vehicleId?.title || 'a vehicle'}. Please review and approve.`,
+        {
+          action: 'new_booking_created',
+          status: 'pending',
+          bookingId: booking._id.toString(),
+          userId: bookingOwnerId.toString(),
+          userName: bookingOwnerName,
+          userEmail: bookingOwnerEmail,
+          vehicleTitle: booking.vehicleId?.title || 'Vehicle',
+          vehicleId: booking.vehicleId?._id?.toString() || null
+        },
+        booking._id
+      );
+    } catch (adminNotifError) {
+      console.error(`❌ Error sending notification to admins:`, adminNotifError);
     }
 
     res.status(201).json({
@@ -431,10 +499,10 @@ exports.approveBooking = async (req, res) => {
     await booking.populate('user', 'name email phone profileImage');
     await booking.populate('vehicleId', 'title category images price');
 
-    // SECURITY: Send notification ONLY to booking owner (user who created booking)
+    // Send notification to booking owner (user)
     try {
       await createAndSendNotification(
-        bookingOwnerId, // Only booking owner gets notification
+        bookingOwnerId,
         'booking',
         'Booking Approved',
         `Your booking for ${booking.vehicleId?.title || 'vehicle'} has been approved!`,
@@ -449,7 +517,29 @@ exports.approveBooking = async (req, res) => {
       console.log(`✅ Notification sent to booking owner: ${bookingOwnerEmail} (${bookingOwnerId})`);
     } catch (notifError) {
       console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
-      // Don't fail the request if notification fails
+    }
+
+    // Notify all admins about status change
+    try {
+      await notifyAllAdmins(
+        'booking',
+        'Booking Status Changed',
+        `Booking for ${booking.vehicleId?.title || 'vehicle'} has been approved by ${adminEmail}.`,
+        {
+          action: 'booking_status_changed',
+          status: 'approved',
+          bookingId: booking._id.toString(),
+          userId: bookingOwnerId.toString(),
+          userName: booking.user?.name || 'User',
+          vehicleTitle: booking.vehicleId?.title || 'Vehicle',
+          changedBy: adminEmail,
+          previousStatus: 'pending',
+          newStatus: 'approved'
+        },
+        booking._id
+      );
+    } catch (adminNotifError) {
+      console.error(`❌ Error sending notification to admins:`, adminNotifError);
     }
 
     // Add status color
@@ -527,11 +617,11 @@ exports.rejectBooking = async (req, res) => {
     await booking.populate('user', 'name email phone profileImage');
     await booking.populate('vehicleId', 'title category images price');
 
-    // SECURITY: Send notification ONLY to booking owner (user who created booking)
+    // Send notification to booking owner (user)
     try {
       const rejectionReason = req.body.adminNotes || 'Please contact support for more information.';
       await createAndSendNotification(
-        bookingOwnerId, // Only booking owner gets notification
+        bookingOwnerId,
         'booking',
         'Booking Rejected',
         `Your booking for ${booking.vehicleId?.title || 'vehicle'} has been rejected. ${rejectionReason}`,
@@ -547,6 +637,31 @@ exports.rejectBooking = async (req, res) => {
       console.log(`✅ Notification sent to booking owner: ${bookingOwnerEmail} (${bookingOwnerId})`);
     } catch (notifError) {
       console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
+    }
+
+    // Notify all admins about status change
+    try {
+      const rejectionReason = req.body.adminNotes || 'No reason provided.';
+      await notifyAllAdmins(
+        'booking',
+        'Booking Status Changed',
+        `Booking for ${booking.vehicleId?.title || 'vehicle'} has been rejected by ${adminEmail}.`,
+        {
+          action: 'booking_status_changed',
+          status: 'rejected',
+          bookingId: booking._id.toString(),
+          userId: bookingOwnerId.toString(),
+          userName: booking.user?.name || 'User',
+          vehicleTitle: booking.vehicleId?.title || 'Vehicle',
+          changedBy: adminEmail,
+          previousStatus: 'pending',
+          newStatus: 'rejected',
+          reason: rejectionReason
+        },
+        booking._id
+      );
+    } catch (adminNotifError) {
+      console.error(`❌ Error sending notification to admins:`, adminNotifError);
     }
 
     // Add status color
@@ -624,10 +739,10 @@ exports.startBooking = async (req, res) => {
     await booking.populate('user', 'name email phone profileImage');
     await booking.populate('vehicleId', 'title category images price');
 
-    // SECURITY: Send notification ONLY to booking owner (user who created booking)
+    // Send notification to booking owner (user)
     try {
       await createAndSendNotification(
-        bookingOwnerId, // Only booking owner gets notification
+        bookingOwnerId,
         'booking',
         'Trip Started',
         `Your trip with ${booking.vehicleId?.title || 'vehicle'} has started! Have a safe journey.`,
@@ -642,6 +757,29 @@ exports.startBooking = async (req, res) => {
       console.log(`✅ Notification sent to booking owner: ${bookingOwnerEmail} (${bookingOwnerId})`);
     } catch (notifError) {
       console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
+    }
+
+    // Notify all admins about status change
+    try {
+      await notifyAllAdmins(
+        'booking',
+        'Booking Status Changed',
+        `Trip for ${booking.vehicleId?.title || 'vehicle'} has been started by ${adminEmail}.`,
+        {
+          action: 'booking_status_changed',
+          status: 'ongoing',
+          bookingId: booking._id.toString(),
+          userId: bookingOwnerId.toString(),
+          userName: booking.user?.name || 'User',
+          vehicleTitle: booking.vehicleId?.title || 'Vehicle',
+          changedBy: adminEmail,
+          previousStatus: 'approved',
+          newStatus: 'ongoing'
+        },
+        booking._id
+      );
+    } catch (adminNotifError) {
+      console.error(`❌ Error sending notification to admins:`, adminNotifError);
     }
 
     // Add status color
@@ -758,7 +896,7 @@ exports.completeBooking = async (req, res) => {
     // SECURITY: Send notification ONLY to booking owner (user who created booking)
     try {
       await createAndSendNotification(
-        bookingOwnerId, // Only booking owner gets notification
+        bookingOwnerId,
         'booking',
         'Trip Completed',
         `Your trip with ${booking.vehicleId?.title || 'vehicle'} has been completed successfully! Payment status: ${booking.paymentStatus}.`,
@@ -774,6 +912,30 @@ exports.completeBooking = async (req, res) => {
       console.log(`✅ Notification sent to booking owner: ${bookingOwnerEmail} (${bookingOwnerId})`);
     } catch (notifError) {
       console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
+    }
+
+    // Notify all admins about status change
+    try {
+      await notifyAllAdmins(
+        'booking',
+        'Booking Status Changed',
+        `Trip for ${booking.vehicleId?.title || 'vehicle'} has been completed by ${adminEmail}. Payment status: ${booking.paymentStatus}.`,
+        {
+          action: 'booking_status_changed',
+          status: 'completed',
+          bookingId: booking._id.toString(),
+          userId: bookingOwnerId.toString(),
+          userName: booking.user?.name || 'User',
+          vehicleTitle: booking.vehicleId?.title || 'Vehicle',
+          changedBy: adminEmail,
+          previousStatus: 'ongoing',
+          newStatus: 'completed',
+          paymentStatus: booking.paymentStatus
+        },
+        booking._id
+      );
+    } catch (adminNotifError) {
+      console.error(`❌ Error sending notification to admins:`, adminNotifError);
     }
 
     // Add status color
@@ -897,7 +1059,30 @@ exports.cancelBooking = async (req, res) => {
       console.log(`✅ Notification sent to booking owner: ${bookingOwnerEmail} (${bookingOwnerIdForNotif})`);
     } catch (notifError) {
       console.error(`❌ Error sending notification to booking owner ${bookingOwnerEmail}:`, notifError);
-      // Don't fail the request if notification fails
+    }
+
+    // Notify all admins about booking cancellation
+    try {
+      const cancelledByName = isAdmin ? userEmail : (req.user.name || 'User');
+      await notifyAllAdmins(
+        'booking',
+        'Booking Cancelled',
+        `${cancelledByName} has cancelled booking for ${booking.vehicleId?.title || 'vehicle'}.${cancellationReason ? ` Reason: ${cancellationReason}` : ''}`,
+        {
+          action: 'booking_cancelled',
+          status: 'cancelled',
+          bookingId: booking._id.toString(),
+          userId: bookingOwnerIdForNotif.toString(),
+          userName: booking.user?.name || 'User',
+          vehicleTitle: booking.vehicleId?.title || 'Vehicle',
+          cancelledBy: cancelledByName,
+          cancellationReason: cancellationReason || null,
+          previousStatus: booking.bookingStatus || 'pending'
+        },
+        booking._id
+      );
+    } catch (adminNotifError) {
+      console.error(`❌ Error sending notification to admins:`, adminNotifError);
     }
 
     console.log(`✅ Booking ${bookingId} cancelled successfully by ${isAdmin ? 'admin' : 'user'} ${userEmail}`);

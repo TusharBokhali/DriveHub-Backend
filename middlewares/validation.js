@@ -109,6 +109,23 @@ exports.validateLogin = [
       }
       return true;
     }),
+  // Role validation - required for normal login, optional for Google Sign-In
+  body('role')
+    .optional()
+    .custom((value, { req }) => {
+      // If googleId is provided, role is optional (will default to 'user')
+      if (req.body.googleId) {
+        return true;
+      }
+      // For normal login, role is required
+      if (!value || value.trim() === '') {
+        throw new Error('Role is required for login');
+      }
+      if (!['user', 'client', 'admin'].includes(value)) {
+        throw new Error('Role must be either "user", "client", or "admin"');
+      }
+      return true;
+    }),
   // Google Sign-In fields (optional)
   body('googleId')
     .optional()
@@ -129,13 +146,61 @@ exports.validateLogin = [
 // Vehicle validation rules
 exports.validateVehicle = [
   body('title').notEmpty().withMessage('Title is required'),
-  body('rentType').isIn(['hourly', 'daily', 'per_km', 'fixed']).withMessage('Invalid rent type'),
+  body('rentType')
+    .optional()
+    .custom((value) => {
+      if (!value) return true;
+      const normalized = String(value).toLowerCase().trim();
+      const validTypes = ['hourly', 'daily', 'per_km', 'fixed', 'per km', 'perkm'];
+      return validTypes.includes(normalized);
+    })
+    .withMessage('Invalid rent type'),
   body('price').isNumeric().withMessage('Price must be a number'),
   body('mileage').optional().isNumeric().withMessage('Mileage must be a number'),
   body('seats').optional().isInt({ min: 1, max: 50 }).withMessage('Seats must be between 1 and 50'),
-  body('transmission').optional().isIn(['manual', 'automatic', 'semi-automatic']).withMessage('Invalid transmission type'),
-  body('fuelType').optional().isIn(['petrol', 'diesel', 'electric', 'hybrid', 'cng']).withMessage('Invalid fuel type'),
+  // Case-insensitive transmission validation - accepts any case and normalizes
+  body('transmission')
+    .optional()
+    .custom((value) => {
+      if (!value) return true;
+      const normalized = String(value).toLowerCase().trim();
+      const validTypes = ['manual', 'automatic', 'semi-automatic', 'semi-auto', 'semiautomatic', 'cvt'];
+      return validTypes.includes(normalized);
+    })
+    .withMessage('Invalid transmission type'),
+  // Case-insensitive fuel type validation - accepts any case and normalizes
+  body('fuelType')
+    .optional()
+    .custom((value) => {
+      if (!value) return true;
+      const normalized = String(value).toLowerCase().trim();
+      const validTypes = ['petrol', 'diesel', 'electric', 'hybrid', 'cng', 'lpg'];
+      return validTypes.includes(normalized);
+    })
+    .withMessage('Invalid fuel type'),
+  // Case-insensitive category validation
+  body('category')
+    .optional()
+    .custom((value) => {
+      if (!value) return true;
+      const normalized = String(value).toLowerCase().trim();
+      const validCategories = ['bike', 'car', 'auto', 'other'];
+      return validCategories.includes(normalized);
+    })
+    .withMessage('Invalid category. Must be one of: bike, car, auto, other'),
   body('year').optional().isInt({ min: 1900, max: new Date().getFullYear() + 1 }).withMessage('Invalid year'),
+  // Features validation - accepts array or string (will be parsed in controller)
+  body('features')
+    .optional()
+    .custom((value) => {
+      if (!value) return true;
+      // Accept array
+      if (Array.isArray(value)) return true;
+      // Accept string (will be parsed as JSON in controller)
+      if (typeof value === 'string') return true;
+      return false;
+    })
+    .withMessage('Features must be an array or JSON string'),
   exports.validateRequest
 ];
 
